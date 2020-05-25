@@ -71,5 +71,14 @@
     <ClInclude Include="ShortestPathTree.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="event_computation.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SPTnode.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="LOS.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

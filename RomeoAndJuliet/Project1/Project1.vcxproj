@@ -151,8 +151,10 @@
     <ClInclude Include="Chain.h" />
     <ClInclude Include="DebugPrint.h" />
     <ClInclude Include="Edge.h" />
+    <ClInclude Include="event_computation.h" />
     <ClInclude Include="Hourglass.h" />
     <ClInclude Include="hourglass_operation.h" />
+    <ClInclude Include="LOS.h" />
     <ClInclude Include="NODE.h" />
     <ClInclude Include="Point.h" />
     <ClInclude Include="PointS.h" />
@@ -161,6 +163,7 @@
     <ClInclude Include="print.h" />
     <ClInclude Include="ShortestPathTree.h" />
     <ClInclude Include="SNode.h" />
+    <ClInclude Include="SPTnode.h" />
     <ClInclude Include="tangent.h" />
     <ClInclude Include="TNODE.h" />
     <ClInclude Include="Tree.h" />
