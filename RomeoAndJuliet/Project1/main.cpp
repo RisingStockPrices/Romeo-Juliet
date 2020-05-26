@@ -392,6 +392,39 @@ void preprocess_polygon()
 	diagonal_with_edge_list = diagonal_list;
 	diagonal_list = vector<Edge>(diagonal_list.begin(), diagonal_list.begin() + d_size);
 	
+	/*initializing vertex list*/
+	for (int i = 0; i < v_num; i++)
+	{
+		vector<int> newV;
+		vertex_triangle_list.push_back(newV);
+		triangle_edge_list.push_back(newV);
+	}
+	for (int i = 0; i < polygon_list.size(); i++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			vertex_triangle_list[polygon_list[i][j]].push_back(i);
+		}
+	}
+	for (int i = 0; i < diagonal_list.size(); i++)
+	{
+		int* tri_list = diagonal_list[i].get_triangle();
+		for (int j = 0; j < 2; j++)
+			triangle_edge_list[tri_list[j]].push_back(i);
+	}
+	for (int i = 0; i < v_num; i++)
+	{
+		int j = (i + 1) % v_num;
+
+		vector<int> list1 = vertex_triangle_list[i];
+		vector<int> list2 = vertex_triangle_list[j];
+		vector<int> res(1);
+		set_intersection(list1.begin(), list1.end(), list2.begin(), list2.end(), res.begin());
+
+		triangle_edge_list[res[0]].push_back(i + d_size);
+		//common element in list 1 and list2
+	}
+
 }
 
 string makeMeString(GLint versionRaw) {
@@ -752,6 +785,7 @@ void add_test_point(int button, int state, int x, int y) {
 				events->compute_boundary_events();
 				events->compute_bend_events();
 
+				
 				Events = *events;
   				printf("done computing the boundary and path events!\n");
 			}

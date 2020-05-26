@@ -1,5 +1,6 @@
 #pragma once
 typedef double point_type;
+#include <vector>
 using namespace std;
 
 class Point {

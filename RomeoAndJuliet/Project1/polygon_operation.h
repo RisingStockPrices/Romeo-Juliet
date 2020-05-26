@@ -13,6 +13,8 @@
 using namespace std;
 
 //vector<Point> point_list;
+vector<vector<int>> vertex_triangle_list; //holds adjacent triangle list
+vector<vector<int>> triangle_edge_list;
 vector<vector<int>> polygon_list;
 vector<vector<int>> outer_polygon_list;
 vector<vector<int>> triangle_list;
