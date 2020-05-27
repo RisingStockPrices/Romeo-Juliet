@@ -11,6 +11,7 @@ using namespace std;
 class EVENTS {
 	int next_line_id;
 	vector<vector<LOS*>> queue;
+	vector<vector<LINE*>> Queue;
 	vector<int> shortest_path;
 	SPT* spt[2]; //[0]: spt_s (s as root) , [1]: spt_t (t as root)
 public:
@@ -21,6 +22,7 @@ public:
 		shortest_path = _shortest_path;
 		for (int i = 0; i < shortest_path.size()-1; i++)
 		{
+			Queue.push_back(vector<LINE *> ());
 			queue.push_back(vector<LOS*>());
 		}
 		spt[0] = _spt_s;
@@ -48,11 +50,17 @@ bool compare_by_angle(LOS* a, LOS* b)
 		return false;
 }
 
+bool compare_angle(LINE* a, LINE* b)
+{
+	return (a->getAngle() < b->getAngle());
+}
+
 /* sorts boundary events in the order they appear on the polygon 
    uses the slope information stored in LOS class
    must be called only after all the path events are set*/
 void EVENTS::sort_boundary_events()
 {
+	
 	for (int i = 0; i < queue.size()-1; i++)
 	{
 		LOS* path = queue[i][0];
@@ -94,11 +102,14 @@ void EVENTS::compute_path_events()
 		int prev = shortest_path[i];
 		int cur = shortest_path[i + 1];
 		
+		PATH* line = new PATH(prev, cur);
+		Queue[i].push_back(line);
+		/*
 		//float angle = i == 0 ? 0 : calculate_angle_between_positive(shortest_path[i], shortest_path[i + 1], shortest_path[i], shortest_path[i - 1]);
 		LOS* los = new LOS(next_line_id++, prev, cur, cur, 0, PATH);
 		los->compute_other_endpoint(true);
 		//los->extend_path_event();
-		queue[i].push_back(los);
+		queue[i].push_back(los);*/
 	}
 }
 
@@ -131,49 +142,51 @@ bool is_tangent(int prev, int cur, int next, int p)
 void EVENTS::compute_boundary_events()
 {
 	//search the tree for candidates 
-	for (int i = 1; i < shortest_path.size()-1; i++)
+	for (int i = 1; i < shortest_path.size() - 1; i++)
 	{
 		int prev = shortest_path[i - 1];
 		int cur = shortest_path[i];
 		int next = shortest_path[i + 1];
 
 		//find the vertex in the spt and the direct children will be the candidate
-		SPTnode* vertex = spt[0]->get_node(cur);
-		if (vertex == NULL)
+		SPTnode* parent_s = spt[0]->get_node(cur);
+		SPTnode* parent_t = spt[1]->get_node(cur);
+		if (parent_s == NULL || parent_t ==NULL )
 		{
 			printf("couldn't find node in tree\n");
 			exit(-1);
 		}
-		vector<SPTnode*> s_candidates = vertex->get_children();
-		int s_size = s_candidates.size();
 
-		SPTnode* vertex_t = spt[1]->get_node(cur);
-		if (vertex_t == NULL)
-		{
-			printf("couldn't find node in tree\n");
-			exit(100);
-		}
-		vector<SPTnode*> t_candidates = vertex_t->get_children();
-
-		s_candidates.insert(s_candidates.end(), t_candidates.begin(), t_candidates.end());
-
+		vector<SPTnode*> candidates(parent_s->get_children());
+		vector<SPTnode*> t_kids = parent_t->get_children();
+		candidates.insert(candidates.end(), t_kids.begin(),t_kids.end());
+		
 		//then check the tangent thing...
-		for (int j = 0; j < s_candidates.size(); j++)
+		for (int j = 0; j < candidates.size(); j++)
 		{
-			int vertex_id = s_candidates[j]->get_id();
+			int vertex_id = candidates[j]->get_id();
 			if (vertex_id != next && vertex_id != shortest_path[i - 1])
 			{
 				if (is_tangent(prev,cur,next, vertex_id))
 				{
+					double angle = calculate_angle_between_positive(cur, vertex_id, prev, cur);
+					BOUNDARY* boundary = new BOUNDARY(cur, vertex_id,angle);
+					Queue[i - 1].push_back(boundary);
+					/*
 					float angle = calculate_angle_between_positive(cur, vertex_id, prev, cur);
 					LOS* los = new LOS(next_line_id++, cur, vertex_id, cur, angle, j < s_size ? BOUNDARY_S : BOUNDARY_T);// BOUNDARY);
 					los->compute_other_endpoint(false);
-					queue[i-1].push_back(los);
+					queue[i-1].push_back(los);*/
+
 				}
 			}
 		}
+
+		for (int j = 0; j < Queue[i - 1].size(); j++)
+		{
+			sort(Queue[i - 1].begin(), Queue[i - 1].end(), compare_angle);
+		}
 	}
-	sort_boundary_events();
 }
 
 /* Sets the foot_bool, pi_s_l, pi_t_l for the given los in the queue */

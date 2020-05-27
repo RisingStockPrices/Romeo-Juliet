@@ -7,6 +7,8 @@
 int line_of_sight_id;
 bool check_penetration(int from, int to, int apex, int first, int second);
 Point* get_line_intersection(int p1, int p2, int q1, int q2);
+float computeSlope(Point p1, Point p2);
+Point computeEndpoint(int lineFrom, int lineTo);
 Point foot_of_perpendicular(int p, Point origin, Point dest);
 /*
 float compute_slope(int _p1, int _p2)
@@ -28,11 +30,11 @@ float compute_slope(int _p1, int _p2)
 
 	return (float)(y1 - y2) / (x1 - x2);
 }*/
-/*
+
 enum TYPE {
-	PATH,
-	BOUNDARY,
-	BEND
+	tPATH,
+	tBOUNDARY,
+	tBEND
 };
 
 class LINE {
@@ -41,27 +43,50 @@ protected:
 	float slope;
 	TYPE type;
 	int v;
+	double angle=0;
 public:
 	//LINE(TYPE type, Point p1, Point p2, int v);
+	double getAngle() {
+		return angle;
+	}
 };
 
 class PATH : public LINE {
 	int v2;
 
 public:
-
+	PATH(int _v, int _v2) {
+		type = tPATH;
+		v = _v;
+		v2 = _v2;
+		endP[0] = computeEndpoint(v, v2);
+		endP[1] = computeEndpoint(v2, v);
+		slope = computeSlope(endP[0], endP[1]);
+	}
 };
 
 class BOUNDARY : public LINE {
 	int boundary_point;
+
+public:
+	BOUNDARY(int _v, int _v2, double _ang) {
+		type = tBOUNDARY;
+		v = _v;
+		boundary_point = _v2;
+		endP[0] = point_list[_v2];
+		endP[1] = computeEndpoint(boundary_point, v);
+		slope = computeSlope(endP[0], endP[1]);
+		angle = _ang;
+	}
+	
 };
 
 class BEND : public LINE {
 
-};*/
+};
 
 
-float slopeComputation(Point p1, Point p2) {
+float computeSlope(Point p1, Point p2) {
 	float x1 = p1.get_x();
 	float x2 = p2.get_x();
 	float y1 = p1.get_y();
@@ -198,8 +223,7 @@ Point computeEndpoint(int lineFrom, int lineTo)
 }
 
 enum event_type {
-	PATH,
-	BOUNDARY,
+	Path,
 	BOUNDARY_S,
 	BOUNDARY_T,
 	BEND
@@ -487,7 +511,7 @@ vector<int> LOS::compute_shortest_path_line_nonP_vertex(Point vertex, SPT* spt, 
 
 void LOS::compute_shortest_path_to_los(vector<int> shortest_path, SPT** spt)
 {
-	if (type == PATH)
+	if (type == Path)
 	{
 		//pi_s_l should be the shortest path to line p[0] and endpoint[0]
 		//pi_t_l should be the shortest path to line p[1] and endpoint[1]
@@ -769,7 +793,7 @@ Point * LOS::get_endpoint(int from, int to, int tri, int vertex1, int vertex2,bo
 	//check if polygon edge
 	int diff = abs(chosen_vertex - other_vertex);
 	if (diff == 1 || diff == (v_num - 1)) {
-		int* edge = (type != PATH) ? edge1 : (first ? edge1 : edge2);//)first ? edge1 : edge2;
+		int* edge = (type != Path) ? edge1 : (first ? edge1 : edge2);//)first ? edge1 : edge2;
 		edge[0] = chosen_vertex;
 		edge[1] = other_vertex;
 		return get_line_intersection(from, to, chosen_vertex, other_vertex);
