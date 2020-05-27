@@ -3,8 +3,10 @@
 #include "ShortestPathTree.h" //includes polygon_operation.h
 #include "polygon_decomposition.h"
 
+#include <limits>
 int line_of_sight_id;
 bool check_penetration(int from, int to, int apex, int first, int second);
+Point* get_line_intersection(int p1, int p2, int q1, int q2);
 Point foot_of_perpendicular(int p, Point origin, Point dest);
 /*
 float compute_slope(int _p1, int _p2)
@@ -26,6 +28,174 @@ float compute_slope(int _p1, int _p2)
 
 	return (float)(y1 - y2) / (x1 - x2);
 }*/
+/*
+enum TYPE {
+	PATH,
+	BOUNDARY,
+	BEND
+};
+
+class LINE {
+protected:
+	Point endP[2];
+	float slope;
+	TYPE type;
+	int v;
+public:
+	//LINE(TYPE type, Point p1, Point p2, int v);
+};
+
+class PATH : public LINE {
+	int v2;
+
+public:
+
+};
+
+class BOUNDARY : public LINE {
+	int boundary_point;
+};
+
+class BEND : public LINE {
+
+};*/
+
+
+float slopeComputation(Point p1, Point p2) {
+	float x1 = p1.get_x();
+	float x2 = p2.get_x();
+	float y1 = p1.get_y();
+	float y2 = p2.get_y();
+
+	if (y1 == y2)
+		return 0;
+	if (x1 == x2)
+		return std::numeric_limits<float>::infinity();
+
+	return (y1 - y2) / (x1 - x2);
+}
+
+Point computeEndpoint(int lineFrom, int lineTo)
+{
+	//find triangle that the line penetrates through
+	//and the edge it penetrates
+	int tri = -1;
+	int edge = -1;
+
+	if (lineTo < v_num) {
+		vector<int> adjacentTriangles = vertex_triangle_list[lineTo];
+
+		for (int i = 0; i < adjacentTriangles.size(); i++)
+		{
+			tri = adjacentTriangles[i];
+			vector<int> vertices = polygon_list[tri];
+			int v[2];
+			for (int j = 0; j < 3; j++)
+			{
+				if (vertices[j] == lineTo) {
+					v[0] = vertices[(j + 1) % 3];
+					v[1] = vertices[(j + 2) % 3];
+					break;
+				}
+			}
+			bool valid = check_penetration(lineFrom, lineTo, lineTo, v[0], v[1]);
+			if (valid) {
+				vector<int> edges = triangle_edge_list[tri];
+				for (int j = 0; j < 3; j++)
+				{
+					if (diagonal_with_edge_list[edges[j]].check_same_edge(v[0], v[1]))
+					{
+						edge = edges[j];
+						break;
+					}
+				}
+				break;
+			}
+		}
+	}
+	else
+	{
+		tri = point_state.find_triangle(point_list[lineTo]);
+		vector<int> vertices = polygon_list[tri];
+		int v[2];
+		for (int j = 0; j < 3; j++)
+		{
+			if (vertices[j] == lineFrom) {
+				v[0] = vertices[(j + 1) % 3];
+				v[1] = vertices[(j + 2) % 3];
+				break;
+			}
+		}
+		vector<int> edges = triangle_edge_list[tri];
+		for (int j = 0; j < 3; j++)
+		{
+			if (diagonal_with_edge_list[edges[j]].check_same_edge(v[0], v[1]))
+			{
+				edge = edges[j];
+				break;
+			}
+		}
+	}
+
+	if (edge == -1 || tri == -1)
+	{
+		printf("error in choosing triangle - computeEndpoint\n");
+		exit(69);
+	}
+
+	//repeat:
+//find the other triangle that shares that edge
+//find the edge that the line penetrates through
+	
+	while (edge < diagonal_list.size())
+	{
+		int new_tri = -1;
+		int new_edge = -1;
+		int v[3];
+		int* t = diagonal_list[edge].get_triangle();
+		if (t[0] == tri)
+			new_tri = t[1];
+		else
+			new_tri = t[0];
+
+		vector<int> vertices = polygon_list[new_tri];
+		for (int i = 0; i < 3; i++)
+		{
+			if (diagonal_list[edge].check_same_point(vertices[i]) == -1) {
+				v[0] = vertices[i];//the vertex not included in the EDGE
+				v[1] = vertices[(i + 1) % 3];
+				v[2] = vertices[(i + 2) % 3];
+				break;
+			}
+		}
+		tri = new_tri;
+		vector<int> edges = triangle_edge_list[new_tri];
+
+		bool penetrateLeft = check_penetration(lineFrom, lineTo, lineTo, v[0], v[1]);
+		int otherPoint = (penetrateLeft)?v[1]:v[2];
+
+		for (int i = 0; i < 3; i++)
+		{
+			if (diagonal_with_edge_list[edges[i]].check_same_edge(v[0], otherPoint))
+			{
+				new_edge = edges[i];
+				break;
+			}
+		}
+
+		if (new_edge != -1)
+			edge = new_edge;
+	}
+
+	int v1 = diagonal_with_edge_list[edge].get_origin();
+	int v2 = diagonal_with_edge_list[edge].get_dest();
+	//reached polygon boundary
+	Point* p = get_line_intersection(lineFrom, lineTo, v1,v2);
+	if (p != NULL)
+		return *p;
+	else
+		return Point(-1, -1);
+}
 
 enum event_type {
 	PATH,
@@ -675,6 +845,7 @@ bool LOS::compute_other_endpoint(bool is_type)
 			this->endpoint[idx] = *ptr;
 		}
 	} while (is_type && idx==false);
-
+	//Point res = computeEndpoint(p[0], p[1]);
+	//Point res2 = computeEndpoint(p[1], p[0]);
 	return true;
 }
