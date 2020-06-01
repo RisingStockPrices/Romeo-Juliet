@@ -783,7 +783,8 @@ void add_test_point(int button, int state, int x, int y) {
 				EVENTS* events = new EVENTS(spath, spt_s, spt_t);
 				events->compute_path_events();
 				events->compute_boundary_events();
-				events->compute_bend_events();
+				shortest_path_random_point(point_list[v_num - 1], spt_s);
+				//events->compute_bend_events();
 
 				
 				Events = *events;
@@ -967,7 +968,10 @@ void display() {
 		display_edge(diagonal_list[i]);
 	}
 	
-	/* Mark the boundary events (path events overlap with the shortest path) */
+
+
+	/*
+	// Mark the boundary events (path events overlap with the shortest path) 
 	glLineWidth(3);
 	set_color_rgb(207, 99, 10); //green
 	vector<vector<LOS*>> Queue = Events.get_queue();
@@ -981,8 +985,10 @@ void display() {
 		}
 	}
 	glEnd();
+	*/
 
-	/* Mark the extensions of the boundary events */
+	/*
+	// Mark the extensions of the boundary events 
 	//set_color_rgb(242, 200, 228); //green
 	glBegin(GL_LINES);
 	for (int i = 0; i < Queue.size(); i++)
@@ -995,7 +1001,7 @@ void display() {
 	}
 	glEnd();
 	
-	/* Mark the extensions of the path events */
+	// Mark the extensions of the path events 
 	set_color_rgb(255, 192, 203); //green
 	glBegin(GL_LINES);
 	for (int i = 0; i < Queue.size(); i++)
@@ -1005,7 +1011,7 @@ void display() {
 		
 	}
 	glEnd();
-
+	*/
 	/* Draws the shortest path computed using the shortest path tree */
 	set_color_rgb(43, 117, 90);
 	glLineWidth(4);

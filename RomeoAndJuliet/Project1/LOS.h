@@ -107,6 +107,7 @@ Point computeEndpoint(int lineFrom, int lineTo)
 	int tri = -1;
 	int edge = -1;
 
+	//lineTo is a polygon vertex (and not a test point)
 	if (lineTo < v_num) {
 		vector<int> adjacentTriangles = vertex_triangle_list[lineTo];
 
@@ -139,17 +140,34 @@ Point computeEndpoint(int lineFrom, int lineTo)
 		}
 	}
 	else
-	{
+	{//lineTo is a test point
 		tri = point_state.find_triangle(point_list[lineTo]);
 		vector<int> vertices = polygon_list[tri];
 		int v[2];
+
+
+		//this is the part we need to rethink !!
+		//lineTo is inside [tri]
+		//need to extract vertices
 		for (int j = 0; j < 3; j++)
 		{
+			int first = vertices[j];
+			int second = vertices[(j + 1) % 3];
+
+			bool penetrate = check_penetration(lineFrom, lineTo, lineFrom, first, second);
+			bool onSameSide = all_left_or_right(vector<int>(lineTo, lineFrom), first, second);
+			if (penetrate && onSameSide)
+			{
+				v[0] = first;
+				v[1] = second;
+				break;
+			}
+			/*
 			if (vertices[j] == lineFrom) {
 				v[0] = vertices[(j + 1) % 3];
 				v[1] = vertices[(j + 2) % 3];
 				break;
-			}
+			}*/
 		}
 		vector<int> edges = triangle_edge_list[tri];
 		for (int j = 0; j < 3; j++)
@@ -396,7 +414,7 @@ bool check_penetration(int from, int to, int apex, int first, int second)
 		return true;
 }
 
-
+/* this is for the shortest path in the funnel i guess ? */
 void get_remaining_path(vector<int> chain1, vector<int> chain2, vector<int>* final_path, Point* Foot)
 {
 	int apex = chain1[0];
@@ -447,6 +465,24 @@ void get_remaining_path(vector<int> chain1, vector<int> chain2, vector<int>* fin
 	return;
 }
 
+/* Retrieves shortest path from the root of the SPT to a random point */
+vector<int> shortest_path_random_point(Point p, SPT* spt)
+{
+	vector<int> shortest_path;
+	int tri = point_state.find_triangle(p);
+	vector<int> points = polygon_list[tri];
+	vector<vector<int>> path;
+	for (int i = 0; i < 3; i++)
+	{
+		path.push_back(vector<int>());
+		path[i] = spt->retrieve_shortest_path(points[i]);
+	}
+	
+	vector<int> common;
+	//find last common vertex
+	set_intersection(path[0].begin(), path[0].end(), path[1].begin(), path[1].end(),back_inserter(common));
+	return shortest_path;
+}
 
 vector<int> LOS::compute_shortest_path_line_nonP_vertex(Point vertex, SPT* spt, int* e)
 {
