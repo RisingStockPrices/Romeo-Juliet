@@ -6,6 +6,7 @@
 #include <limits>
 int line_of_sight_id;
 bool check_penetration(int from, int to, int apex, int first, int second);
+vector<int> funnel_path(vector<int> chain1, vector<int> chain2);
 Point* get_line_intersection(int p1, int p2, int q1, int q2);
 float computeSlope(Point p1, Point p2);
 Point computeEndpoint(int lineFrom, int lineTo);
@@ -477,13 +478,119 @@ vector<int> shortest_path_random_point(Point p, SPT* spt)
 		path.push_back(vector<int>());
 		path[i] = spt->retrieve_shortest_path(points[i]);
 	}
+
+	//extract common path
+	int idx = 0;
+	int path1_size = path[0].size();
+	int path2_size = path[1].size();
+	int path3_size = path[2].size();
+
+	int min_size = min(min(path1_size, path2_size), path3_size);
+	while (idx < min_size)
+	{
+		int path1 = path[0][idx];
+		int path2 = path[1][idx];
+		int path3 = path[2][idx];
+
+		if (path1 == path2 && path1 == path3)
+		{
+			idx++;
+			shortest_path.push_back(path1);
+		}
+		else
+			break;
+	}
+
+	int apex = path[0][idx - 1];
+	if (apex == points[0] || apex == points[1] || apex == points[2])
+		return shortest_path; //point not included
+	//all three vertices share common parent
+	if (idx == path1_size && idx == path2_size && idx == path3_size)
+		return shortest_path;
+
+	//three paths have pattern a, a, b
+	vector<int> chain1, chain2;
+	int a1, a2, b;
+	if (path[0][idx] == path[1][idx])
+	{
+		a1 = 0; a2 = 1; b = 2;
+	}
+	else if (path[0][idx] == path[2][idx])
+	{
+		a1 = 0; a2 = 2; b = 1;
+	}
+	else
+	{
+		a1 = 1; a2 = 2; b = 0;
+	}
 	
-	vector<int> common;
-	//find last common vertex
-	set_intersection(path[0].begin(), path[0].end(), path[1].begin(), path[1].end(),back_inserter(common));
+	//chain2 is the odd one out (b) and choose chain1 btw a1 and a2
+	chain2.insert(chain2.begin(), path[b].begin() + idx-1, path[b].end());
+	if (path[a1].size() != path[a2].size())
+		chain1 = (path[a1].size() > path[a2].size()) ? path[a1] : path[a2];
+	else
+	{
+		//apex2 : first index in the two paths [a1/a2] with different vertices
+		int apex2 = idx;
+		for (; apex2 < path[a1].size(); apex2++)
+		{
+			if (path[a1][apex2] != path[a2][apex2])
+				break;
+		}
+
+		double first = calculate_angle_between_positive(path[a1][apex2 - 2], path[a1][apex2 - 1], path[a1][apex2 - 1], path[a1][apex2]);
+		double second = calculate_angle_between_positive(path[a2][apex2 - 2], path[a2][apex2 - 1], path[a2][apex2 - 1], path[a2][apex2]);
+
+		chain1 = (first < second) ? path[a2] : path[a1];
+	}
+	chain1.erase(chain1.begin(), chain1.begin() + idx-1);
+
+	vector<int> funnel = funnel_path(chain1, chain2);
+	shortest_path.insert(shortest_path.end(), funnel.begin(), funnel.end());
+
 	return shortest_path;
 }
 
+vector<int> funnel_path(vector<int> chain1, vector<int> chain2)
+{
+	vector<int> funnel_path;
+	Point foot = foot_of_perpendicular(chain1.front(), point_list[chain1.back()], point_list[chain2.back()]);
+	point_list.push_back(foot);
+	
+	double first = calculate_angle_between(chain1[0], chain1[1], point_list.size() - 1);
+	double second = calculate_angle_between(chain2[0], chain2[1], point_list.size() - 1);
+
+	if (first * second < 0)
+	{
+		return funnel_path;
+	}
+
+	vector<int>* main_chain;
+	double prev = 0;
+	if (abs(first) < abs(second))
+	{
+		main_chain = &chain1;
+		prev = first;
+	}
+	else
+	{
+		main_chain = &chain2;
+		prev = second;
+	}
+
+	for (int i = 1; i < main_chain->size()-1; i++)
+	{
+		double angle = calculate_angle_between((*main_chain)[i], (*main_chain)[i + 1], (*main_chain)[0], point_list.size() - 1);
+		funnel_path.push_back((*main_chain)[i]);
+		if (angle * prev < 0)
+			break;
+		prev = angle;
+	}
+
+	point_list.pop_back();
+	return funnel_path;
+
+}
 vector<int> LOS::compute_shortest_path_line_nonP_vertex(Point vertex, SPT* spt, int* e)
 {
 	vector<int> shortest_path;

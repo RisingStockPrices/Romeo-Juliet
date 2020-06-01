@@ -783,7 +783,7 @@ void add_test_point(int button, int state, int x, int y) {
 				EVENTS* events = new EVENTS(spath, spt_s, spt_t);
 				events->compute_path_events();
 				events->compute_boundary_events();
-				shortest_path_random_point(point_list[v_num - 1], spt_s);
+				shortest_path_random_point(Point(400, 400) , spt_s);
 				//events->compute_bend_events();
 
 				
@@ -843,7 +843,7 @@ void show_sp_line(int key, int x, int y)
 void print_result(int argc, char **argv) {
 
 	glutInit(&argc, argv);
-	glutInitWindowPosition(100, 0);
+	glutInitWindowPosition(300, 0);
 	glutInitWindowSize(800, 800);//창 크기 설정
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
 	glutCreateWindow("Shortest Path in a simple Polygon");
@@ -1069,8 +1069,12 @@ void display() {
 	glColor3f(0.5f, 0.7f, 0.30f);
 	glColor3f(1, 1, 0);
 	glBegin(GL_POINTS);
-	for (int i = 1; i < v_num; i++)
+	for (int i = 1; i < v_num; i++) {
+		if ((i) % 10 == 0)
+			glColor3f(0, 0.9f, 0.4f);
 		glVertex2d(point_list[i].get_x(), point_list[i].get_y());
+		glColor3f(1, 1, 0);
+	}
 	glEnd();
 
 
