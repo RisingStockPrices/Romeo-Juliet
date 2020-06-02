@@ -783,7 +783,7 @@ void add_test_point(int button, int state, int x, int y) {
 				EVENTS* events = new EVENTS(spath, spt_s, spt_t);
 				events->compute_path_events();
 				events->compute_boundary_events();
-				shortest_path_random_point(Point(400, 400) , spt_s);
+				events->compute_bend_events();
 				//events->compute_bend_events();
 
 				

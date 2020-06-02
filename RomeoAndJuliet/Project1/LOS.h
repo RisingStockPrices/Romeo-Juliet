@@ -6,7 +6,8 @@
 #include <limits>
 int line_of_sight_id;
 bool check_penetration(int from, int to, int apex, int first, int second);
-vector<int> funnel_path(vector<int> chain1, vector<int> chain2);
+vector<int> funnel_path_point(vector<int> chain1, vector<int> chain2, Point p);
+pair<vector<int>,Point> funnel_path(vector<int> chain1, vector<int> chain2);
 Point* get_line_intersection(int p1, int p2, int q1, int q2);
 float computeSlope(Point p1, Point p2);
 Point computeEndpoint(int lineFrom, int lineTo);
@@ -50,6 +51,17 @@ public:
 	double getAngle() {
 		return angle;
 	}
+	Point* getEndpoints() {
+		return endP;
+	}
+	int getV()
+	{
+		return v;
+	}
+	TYPE getType()
+	{
+		return type;
+	}
 };
 
 class PATH : public LINE {
@@ -64,6 +76,11 @@ public:
 		endP[1] = computeEndpoint(v2, v);
 		slope = computeSlope(endP[0], endP[1]);
 	}
+	int getV2()
+	{
+		return v2;
+	}
+	
 };
 
 class BOUNDARY : public LINE {
@@ -404,6 +421,9 @@ Point foot_of_perpendicular(int p, Point origin, Point dest)
 /* Returns whether vector(from,to) is  in the smaller angle that the two vectors v(apex,first) and v(apex,second) make */
 bool check_penetration(int from, int to, int apex, int first, int second)
 {
+	if (apex == first || apex == second)
+		return false;
+
 	double firstA = calculate_angle_between(apex, first, from, to);
 	double secondA = calculate_angle_between(apex, second, from, to);
 
@@ -428,7 +448,7 @@ void get_remaining_path(vector<int> chain1, vector<int> chain2, vector<int>* fin
 	}
 	int foot_idx = point_list.size();
 	point_list.push_back(foot);
-	
+
 	bool direct = check_penetration(apex, foot_idx, apex, chain1[1], chain2[1]);
 
 
@@ -505,7 +525,7 @@ vector<int> shortest_path_random_point(Point p, SPT* spt)
 	if (apex == points[0] || apex == points[1] || apex == points[2])
 		return shortest_path; //point not included
 	//all three vertices share common parent
-	if (idx == path1_size && idx == path2_size && idx == path3_size)
+	if (idx == path1_size-1 && idx == path2_size-1 && idx == path3_size-1)
 		return shortest_path;
 
 	//three paths have pattern a, a, b
@@ -545,23 +565,21 @@ vector<int> shortest_path_random_point(Point p, SPT* spt)
 	}
 	chain1.erase(chain1.begin(), chain1.begin() + idx-1);
 
-	vector<int> funnel = funnel_path(chain1, chain2);
+	vector<int> funnel = funnel_path_point(chain1, chain2, p);// funnel_path(chain1, chain2).first;
 	shortest_path.insert(shortest_path.end(), funnel.begin(), funnel.end());
 
 	return shortest_path;
 }
 
-vector<int> funnel_path(vector<int> chain1, vector<int> chain2)
+vector<int> funnel_path_point(vector<int> chain1, vector<int> chain2, Point p)
 {
 	vector<int> funnel_path;
-	Point foot = foot_of_perpendicular(chain1.front(), point_list[chain1.back()], point_list[chain2.back()]);
-	point_list.push_back(foot);
-	
+	point_list.push_back(p);
 	double first = calculate_angle_between(chain1[0], chain1[1], point_list.size() - 1);
-	double second = calculate_angle_between(chain2[0], chain2[1], point_list.size() - 1);
-
-	if (first * second < 0)
-	{
+	double second = calculate_angle_between(chain2[0], chain2[1],point_list.size() - 1);
+	
+	if (first * second < 0) {
+		point_list.pop_back();
 		return funnel_path;
 	}
 
@@ -578,19 +596,110 @@ vector<int> funnel_path(vector<int> chain1, vector<int> chain2)
 		prev = second;
 	}
 
-	for (int i = 1; i < main_chain->size()-1; i++)
+	for (int i = 1; i < main_chain->size() - 1; i++)
 	{
-		double angle = calculate_angle_between((*main_chain)[i], (*main_chain)[i + 1], (*main_chain)[0], point_list.size() - 1);
 		funnel_path.push_back((*main_chain)[i]);
+		double angle = calculate_angle_between((*main_chain)[i], (*main_chain)[i + 1], point_list.size() - 1);
 		if (angle * prev < 0)
+		{
 			break;
+		}
 		prev = angle;
 	}
 
 	point_list.pop_back();
 	return funnel_path;
-
 }
+pair<vector<int>,Point> funnel_path(vector<int> chain1, vector<int> chain2)
+{
+	vector<int> funnel_path;
+	Point foot = foot_of_perpendicular(chain1.front(), point_list[chain1.back()], point_list[chain2.back()]);
+	point_list.push_back(foot);
+
+	double first = calculate_angle_between(chain1[0], chain1[1], point_list.size() - 1);
+	double second = calculate_angle_between(chain2[0], chain2[1], point_list.size() - 1);
+
+	if (first * second < 0 )
+	{
+		point_list.pop_back();
+		return pair<vector<int>,Point>(funnel_path,foot);
+	}
+
+	vector<int>* main_chain;
+	double prev = 0;
+	if (abs(first) < abs(second))
+	{
+		main_chain = &chain1;
+		prev = first;
+	}
+	else
+	{
+		main_chain = &chain2;
+		prev = second;
+	}
+
+	bool perpendicular = false;
+	for (int i = 1; i < main_chain->size()-1; i++)
+	{
+		double angle = calculate_angle_between((*main_chain)[i], (*main_chain)[i + 1], (*main_chain)[0], point_list.size() - 1);
+		funnel_path.push_back((*main_chain)[i]);
+		if (angle * prev < 0) {
+			perpendicular = true;
+			break;
+		}
+		prev = angle;
+	}
+
+	if (perpendicular)
+	{
+		foot = (funnel_path.empty()) ? foot : foot_of_perpendicular(funnel_path.back(), point_list[chain1.back()], point_list[chain2.back()]);
+	}
+	else
+	{
+		foot = point_list[main_chain->back()];
+	}
+	point_list.pop_back();
+	return pair<vector<int>, Point>(funnel_path, foot);
+}
+
+pair<vector<int>, Point> shortest_path_line(Point p1, Point p2, SPT* spt)
+{
+	vector<int> shortest_path;
+	Point foot;
+	int idx = 0;
+
+	vector<int> first = shortest_path_random_point(p1, spt);
+	vector<int> second = shortest_path_random_point(p2, spt);
+	int minSize = min(first.size(), second.size());
+
+	for (;idx<minSize;idx++)
+	{
+		if (first[idx] == second[idx])
+			shortest_path.push_back(first[idx]);
+		else
+			break;
+	}
+
+	//trimming the two chains
+ 	first.erase(first.begin(), first.begin() + idx - 1);
+	second.erase(second.begin(), second.begin() + idx - 1);
+	point_list.push_back(p1);
+	point_list.push_back(p2);
+	first.push_back(point_list.size() - 2);
+	second.push_back(point_list.size() - 1);
+
+	//getting shortest path within the funnel
+	pair<vector<int>,Point> funnel = funnel_path(first, second);
+
+	//restoring order
+	point_list.pop_back();
+	point_list.pop_back();
+
+	shortest_path.insert(shortest_path.end(), funnel.first.begin(), funnel.first.end());
+
+	return pair<vector<int>, Point>(shortest_path, funnel.second);
+}
+
 vector<int> LOS::compute_shortest_path_line_nonP_vertex(Point vertex, SPT* spt, int* e)
 {
 	vector<int> shortest_path;

@@ -398,6 +398,25 @@ LOS* add_bend_event(LOS* path_event, int rotation_vertex, bool first)
 
 void EVENTS::compute_bend_events()
 {
+	for (int i = 0; i < Queue.size(); i++)
+	{
+		//for (int j = 0; j < Queue[i].size(); j++)
+		//{
+		LINE* line = Queue[i][0];
+		Point* endP = line->getEndpoints();
+		if (line->getType() == tPATH)
+		{
+			PATH* p = (PATH*)line;
+
+			pair<vector<int>, Point> res = shortest_path_line(endP[1],point_list[p->getV2()], spt[0]);
+		}
+		else
+			pair<vector<int>, Point> res = shortest_path_line(endP[0], endP[1] , spt[0]);
+
+
+		//}
+	}
+	/*
 	for (int i = 0; i < queue.size(); i++)
 	{
 		for (int j = 0; j < queue[i].size(); j++)
@@ -430,6 +449,6 @@ void EVENTS::compute_bend_events()
 	//there is a change in the combinatorial structure of the path
 
 
-	printf("done computing bend events\n");
+	printf("done computing bend events\n");*/
 	
 }
