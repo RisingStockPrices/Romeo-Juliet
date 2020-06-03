@@ -380,7 +380,7 @@ LOS* add_bend_event(LOS* path_event, int rotation_vertex, bool first)
 	int valid = point_state.find_triangle(foot);
 	if (valid != -1)
 	{
-		LOS los(-1, rotation_vertex, -1, rotation_vertex, -1, BEND);
+		LOS los(-1, rotation_vertex, -1, rotation_vertex, -1, Bend);
 		los.set_endpoint(0, foot);
 		return &los;
 		//los connects points rotation_vertex and foot
@@ -389,7 +389,7 @@ LOS* add_bend_event(LOS* path_event, int rotation_vertex, bool first)
 	{
 		//guess what!? we already computed it!! it's part of the path event
 		foot = path_event->get_endpoint(first);
-		LOS los(-1, rotation_vertex, -1, rotation_vertex, -1, BEND);
+		LOS los(-1, rotation_vertex, -1, rotation_vertex, -1, Bend);
 		los.set_endpoint(0, foot);
 		return &los;
 	}
@@ -398,24 +398,88 @@ LOS* add_bend_event(LOS* path_event, int rotation_vertex, bool first)
 
 void EVENTS::compute_bend_events()
 {
+	//compute shortest path to line for all (path & boundary) events
 	for (int i = 0; i < Queue.size(); i++)
 	{
-		//for (int j = 0; j < Queue[i].size(); j++)
-		//{
+		//path events
 		LINE* line = Queue[i][0];
+		PATH* p = (PATH*)line;
 		Point* endP = line->getEndpoints();
-		if (line->getType() == tPATH)
+		pair<vector<int>, Point> res = shortest_path_line(endP[1], point_list[p->getV2()], spt[0]);
+		line->setPathS(res.first);
+		res = shortest_path_line(endP[0], point_list[p->getV()], spt[1]);
+		line->setPathT(res.first);
+
+		//boundary events
+		for (int j = 1; j < Queue[i].size(); j++)
 		{
-			PATH* p = (PATH*)line;
-
-			pair<vector<int>, Point> res = shortest_path_line(endP[1],point_list[p->getV2()], spt[0]);
+			line = Queue[i][j];
+			endP = line->getEndpoints();
+			pair<vector<int>, Point> res = shortest_path_line(endP[0], endP[1], spt[0]);
+			line->setPathS(res.first);
+			res = shortest_path_line(endP[0], endP[1], spt[1]);
+			line->setPathT(res.first);
 		}
-		else
-			pair<vector<int>, Point> res = shortest_path_line(endP[0], endP[1] , spt[0]);
-
-
-		//}
 	}
+
+	//u and _u each correspond to u and u' in the paper (see page 7 - bend events)
+	int u, _u;
+	LINE* prev = Queue[0][0];
+	vector<int> prev_path = prev->getPath(0);
+	int prev_u = prev_path.back();
+	vector<int>::iterator it = find(shortest_path.begin(), shortest_path.end(), prev_u);
+	int prev__u = *(it + 1);
+	int prev___u = -1;
+
+	for (int i = 0; i < Queue.size(); i++)
+	{
+		for (int j = 0; j < Queue[i].size(); j++)
+		{
+			LINE* line = Queue[i][j];
+			vector<int> path = line->getPath(0);
+
+			if (path.size() != prev->getPath(0).size())
+				printf("stop here");
+			it = find(path.begin(), path.end(), prev_u);
+			//Type 2 scenario - u is gone from the sp
+			if (it == path.end())
+			{
+				//new bend event with same rotation vertex as PREV and orthogonal to line u-u''
+				BEND* bend = new BEND(prev->getV(), prev_u, prev___u);
+				if (j = 0 && i > 0)
+					Queue[i - 1].push_back(bend);
+				else if (j == 0)
+					printf("what the");
+				else
+					Queue[i].insert(Queue[i].begin() + j, bend);
+			}
+			else //u is still there
+			{
+				//Type 1 scenario (ii)
+				if ((it + 1) != path.end() && prev__u == path.back())
+				{	
+					//new bend event with same rotation vertex as PREV and orthogonal to line u-u'
+					BEND* bend = new BEND(prev->getV(), prev_u, prev__u);
+					if (j = 0 && i > 0)
+						Queue[i - 1].push_back(bend);
+					else if (j == 0)
+						printf("what the");
+					else
+						Queue[i].insert(Queue[i].begin() + j, bend);
+				}
+			}
+
+			prev_u = (path.empty()) ? -1 : path.back();
+			prev___u = (path.size() > 1) ? *(path.end() - 2) : -1;
+			it = find(shortest_path.begin(), shortest_path.end(), prev_u);
+			if (it == shortest_path.end() || it + 1 == shortest_path.end())
+				prev__u = -1;
+			else
+				prev__u = *(it + 1);
+			prev = line;
+		}
+	}
+
 	/*
 	for (int i = 0; i < queue.size(); i++)
 	{

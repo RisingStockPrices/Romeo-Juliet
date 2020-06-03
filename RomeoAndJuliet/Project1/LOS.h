@@ -46,8 +46,13 @@ protected:
 	TYPE type;
 	int v;
 	double angle=0;
+	vector<vector<int>> path; //stores path from s or t to the line of sight
 public:
-	//LINE(TYPE type, Point p1, Point p2, int v);
+
+	LINE() {
+		path.push_back(vector<int>());
+		path.push_back(vector<int>());
+	}
 	double getAngle() {
 		return angle;
 	}
@@ -62,13 +67,33 @@ public:
 	{
 		return type;
 	}
+	void setPathS(vector<int> path_)
+	{
+		path[0] = path_;
+	}
+	void setPathT(vector<int> path_)
+	{
+		path[1] = path_;
+	}
+	vector<int> getPath(int idx)
+	{
+		switch (idx)
+		{
+		case 0:
+			return path[0];
+		case 1: 
+			return path[1];
+		default:
+			return vector<int>();
+		}
+	}
 };
 
 class PATH : public LINE {
 	int v2;
 
 public:
-	PATH(int _v, int _v2) {
+	PATH(int _v2, int _v) {
 		type = tPATH;
 		v = _v;
 		v2 = _v2;
@@ -100,7 +125,65 @@ public:
 };
 
 class BEND : public LINE {
+	int orthogonalP[2];
+public:
+	BEND(int _v, int orth1, int orth2)
+	{
+		orthogonalP[0] = orth1;
+		orthogonalP[1] = orth2;
+		v = _v;
+		type = tBEND;
 
+		Point foot = foot_of_perpendicular(v, point_list[orth1], point_list[orth2]);
+		int tri = point_state.find_triangle(foot);
+		
+		//outside polygon
+		if (tri == -1)
+		{
+			Point endp = computeEndpoint(orth1, orth2); //be mindful of the ordering
+			endP[0] = endp;
+			point_list.push_back(endp);
+			endP[1] = computeEndpoint(v, point_list.size()-1);
+			point_list.pop_back();
+		}
+		else
+		{
+			point_list.push_back(foot);
+			endP[0] = computeEndpoint(v, point_list.size() - 1);
+			endP[1] = computeEndpoint(point_list.size() - 1, v);
+			point_list.pop_back();
+		}
+
+		slope = computeSlope(endP[0], endP[1]);
+		/*
+		//compute slope
+		float orthSlope = computeSlope(point_list[orth1],point_list[orth2]);
+		if (orthSlope == 0)
+			slope = std::numeric_limits<float>::infinity();
+		else if (orthSlope == std::numeric_limits<float>::infinity())
+			slope = 0;
+		else
+			slope = -1 / orthSlope;
+	
+		//compute temporary point in the line using slope info (for endpoint computation)
+		Point V = point_list[v];
+		Point temp;
+		float delta = 1.0;
+		while (1)
+		{
+			temp=Point(V.get_x() + delta, V.get_y() + delta * slope);
+			int tri = point_state.find_triangle(temp);
+			if (tri != -1)
+				break;
+			else
+				delta /= 2.0;
+		}
+		point_list.push_back(temp);
+		endP[0] = computeEndpoint(v, point_list.size() - 1);
+		endP[1] = computeEndpoint(point_list.size() - 1, v);
+		point_list.pop_back();
+		*/
+	}
 };
 
 
@@ -164,9 +247,6 @@ Point computeEndpoint(int lineFrom, int lineTo)
 		int v[2];
 
 
-		//this is the part we need to rethink !!
-		//lineTo is inside [tri]
-		//need to extract vertices
 		for (int j = 0; j < 3; j++)
 		{
 			int first = vertices[j];
@@ -262,7 +342,7 @@ enum event_type {
 	Path,
 	BOUNDARY_S,
 	BOUNDARY_T,
-	BEND
+	Bend
 };
 class LOS {
 	int id;
