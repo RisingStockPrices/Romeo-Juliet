@@ -390,6 +390,7 @@ void preprocess_polygon()
 	construct_hourglasses();
 
 	diagonal_with_edge_list = diagonal_list;
+	diagonal_with_edge_list[d_size + v_num-1].set_dest(0);
 	diagonal_list = vector<Edge>(diagonal_list.begin(), diagonal_list.begin() + d_size);
 	
 	/*initializing vertex list*/

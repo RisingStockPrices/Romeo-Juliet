@@ -11,6 +11,7 @@ pair<vector<int>,Point> funnel_path(vector<int> chain1, vector<int> chain2);
 Point* get_line_intersection(int p1, int p2, int q1, int q2);
 float computeSlope(Point p1, Point p2);
 Point computeEndpoint(int lineFrom, int lineTo);
+Point foot_of_max_perpendicular(int p, Point origin, Point dest);
 Point foot_of_perpendicular(int p, Point origin, Point dest);
 /*
 float compute_slope(int _p1, int _p2)
@@ -129,14 +130,18 @@ class BEND : public LINE {
 public:
 	BEND(int _v, int orth1, int orth2)
 	{
+	
 		orthogonalP[0] = orth1;
 		orthogonalP[1] = orth2;
 		v = _v;
 		type = tBEND;
 
-		Point foot = foot_of_perpendicular(v, point_list[orth1], point_list[orth2]);
-		int tri = point_state.find_triangle(foot);
-		
+		Point foot = foot_of_max_perpendicular(v, point_list[orth1], point_list[orth2]);
+		point_list.push_back(foot);
+		endP[0] = computeEndpoint(v, point_list.size() - 1);
+		endP[1] = computeEndpoint(point_list.size() - 1, v);
+		point_list.pop_back();
+		/*int tri = point_state.find_triangle(foot);
 		//outside polygon
 		if (tri == -1)
 		{
@@ -152,7 +157,7 @@ public:
 			endP[0] = computeEndpoint(v, point_list.size() - 1);
 			endP[1] = computeEndpoint(point_list.size() - 1, v);
 			point_list.pop_back();
-		}
+		}*/
 
 		slope = computeSlope(endP[0], endP[1]);
 		/*
@@ -207,10 +212,11 @@ Point computeEndpoint(int lineFrom, int lineTo)
 	//and the edge it penetrates
 	int tri = -1;
 	int edge = -1;
-
+	
+	int lineToId = point_list[lineTo].get_id();
 	//lineTo is a polygon vertex (and not a test point)
-	if (lineTo < v_num) {
-		vector<int> adjacentTriangles = vertex_triangle_list[lineTo];
+	if (lineToId != -1) {
+		vector<int> adjacentTriangles = vertex_triangle_list[lineToId];
 
 		for (int i = 0; i < adjacentTriangles.size(); i++)
 		{
@@ -219,7 +225,7 @@ Point computeEndpoint(int lineFrom, int lineTo)
 			int v[2];
 			for (int j = 0; j < 3; j++)
 			{
-				if (vertices[j] == lineTo) {
+				if (vertices[j] == lineToId) {
 					v[0] = vertices[(j + 1) % 3];
 					v[1] = vertices[(j + 2) % 3];
 					break;
@@ -241,7 +247,7 @@ Point computeEndpoint(int lineFrom, int lineTo)
 		}
 	}
 	else
-	{//lineTo is a test point
+	{//lineTo is not a polygon vertex
 		tri = point_state.find_triangle(point_list[lineTo]);
 		vector<int> vertices = polygon_list[tri];
 		int v[2];
@@ -465,6 +471,32 @@ vector<Point> LOS::get_shortest_path_to_line(bool s)
 	
 
 	return sp;
+}
+
+Point foot_of_max_perpendicular(int p, Point origin, Point dest)
+{
+	Point foot = foot_of_perpendicular(p, origin, dest);
+	
+	point_list.push_back(origin);
+	point_list.push_back(dest);
+	Point a = computeEndpoint(point_list.size() - 2, point_list.size() - 1);
+	Point b = computeEndpoint(point_list.size() - 1, point_list.size() - 2);
+	double ax = a.get_x();
+	double bx = b.get_x();
+	double footx = foot.get_x();
+	point_list.pop_back();
+	point_list.pop_back();
+	
+
+	if ((ax - footx) * (bx - footx) > 0) //foot outside segment
+	{
+		if (abs(ax - footx) > abs(bx - footx))
+			return b;
+		else
+			return a;
+	}
+	else
+		return foot;
 }
 /* Returns the foot of perpendicular from point p to edge (p1, p2) */
 Point foot_of_perpendicular(int p, Point origin, Point dest)

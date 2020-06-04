@@ -75,6 +75,10 @@ public:
 	}
 	int get_origin() { return origin; }
 	int get_dest() { return dest; }
+	void set_dest(int dst)
+	{
+		dest = dst;
+	}
 	int check_same_point(Edge& e) {
 		if (origin == e.get_origin() || origin == e.get_dest())
 			return origin;

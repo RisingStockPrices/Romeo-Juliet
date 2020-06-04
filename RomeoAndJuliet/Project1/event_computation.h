@@ -444,28 +444,34 @@ void EVENTS::compute_bend_events()
 			//Type 2 scenario - u is gone from the sp
 			if (it == path.end())
 			{
-				//new bend event with same rotation vertex as PREV and orthogonal to line u-u''
-				BEND* bend = new BEND(prev->getV(), prev_u, prev___u);
-				if (j = 0 && i > 0)
-					Queue[i - 1].push_back(bend);
-				else if (j == 0)
-					printf("what the");
-				else
-					Queue[i].insert(Queue[i].begin() + j, bend);
-			}
-			else //u is still there
-			{
-				//Type 1 scenario (ii)
-				if ((it + 1) != path.end() && prev__u == path.back())
-				{	
-					//new bend event with same rotation vertex as PREV and orthogonal to line u-u'
-					BEND* bend = new BEND(prev->getV(), prev_u, prev__u);
+				int prevV = prev->getV();
+				if (prevV != prev_u && prevV != prev___u) {
+					//new bend event with same rotation vertex as PREV and orthogonal to line u-u''
+					BEND* bend = new BEND(prevV, prev_u, prev___u);
 					if (j = 0 && i > 0)
 						Queue[i - 1].push_back(bend);
 					else if (j == 0)
 						printf("what the");
 					else
 						Queue[i].insert(Queue[i].begin() + j, bend);
+
+				}
+			}
+			else //u is still there
+			{
+				//Type 1 scenario (ii)
+				if ((it + 1) != path.end() && prev__u == path.back())
+				{	
+					int prevV = prev->getV();
+					if (prevV != prev_u && prevV != prev__u) {//new bend event with same rotation vertex as PREV and orthogonal to line u-u'
+						BEND* bend = new BEND(prevV, prev_u, prev__u);
+						if (j == 0 && i > 0)
+							Queue[i - 1].push_back(bend);
+						else if (j == 0)
+							printf("what the");
+						else
+							Queue[i].insert(Queue[i].begin() + j, bend);
+					}
 				}
 			}
 
