@@ -465,12 +465,19 @@ void EVENTS::compute_bend_events()
 					int prevV = prev->getV();
 					if (prevV != prev_u && prevV != prev__u) {//new bend event with same rotation vertex as PREV and orthogonal to line u-u'
 						BEND* bend = new BEND(prevV, prev_u, prev__u);
+						Point p = bend->getEndpoints()[0];
+						point_list.push_back(p);
+						//start from here
+						point_list.pop_back();
+
 						if (j == 0 && i > 0)
 							Queue[i - 1].push_back(bend);
 						else if (j == 0)
 							printf("what the");
 						else
 							Queue[i].insert(Queue[i].begin() + j, bend);
+
+
 					}
 				}
 			}
