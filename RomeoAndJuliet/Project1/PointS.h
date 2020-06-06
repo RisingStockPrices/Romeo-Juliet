@@ -170,8 +170,6 @@ public:
 			current_height--;
 		}
 
-		if (ret_candidates.size() > 1)
-			printf("what kinda case is this??");
 		return *min_element(ret_candidates.begin(), ret_candidates.end());
 	}
 	void find_independent_list() {

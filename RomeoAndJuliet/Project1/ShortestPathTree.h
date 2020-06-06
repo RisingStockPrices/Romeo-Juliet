@@ -61,6 +61,10 @@ public:
 		root = new SPTnode(_root);
 		components.push_back(_root);
 	}
+	int get_root()
+	{
+		return root->get_id();
+	}
 	bool is_set(int id)
 	{
 		if (find(components.begin(), components.end(), id) == components.end())

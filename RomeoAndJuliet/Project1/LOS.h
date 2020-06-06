@@ -48,6 +48,7 @@ protected:
 	int v;
 	double angle=0;
 	vector<vector<int>> path; //stores path from s or t to the line of sight
+	Point foot[2];
 public:
 
 	LINE() {
@@ -72,9 +73,13 @@ public:
 	{
 		path[0] = path_;
 	}
-	void setPathT(vector<int> path_)
+	void setPath(int idx, pair<vector<int>, Point> res)
 	{
-		path[1] = path_;
+		if (idx == 0 || idx == 1)
+		{
+			path[idx] = res.first;
+			foot[idx] = res.second;
+		}
 	}
 	vector<int> getPath(int idx)
 	{
@@ -87,6 +92,18 @@ public:
 		default:
 			return vector<int>();
 		}
+	}
+	vector<Point> getShortestPath(int idx)
+	{
+		vector<Point> sPath;
+		if (idx == 0 || idx == 1)
+		{
+			for (int i = 0; i < path[idx].size(); i++)
+				sPath.push_back(point_list[path[idx][i]]);
+			
+			sPath.push_back(foot[idx]);
+		}
+		return sPath;
 	}
 };
 
@@ -117,7 +134,7 @@ public:
 		type = tBOUNDARY;
 		v = _v;
 		boundary_point = _v2;
-		endP[0] = point_list[_v2];
+		endP[0] = computeEndpoint(v, boundary_point);//point_list[_v2];
 		endP[1] = computeEndpoint(boundary_point, v);
 		slope = computeSlope(endP[0], endP[1]);
 		angle = _ang;
@@ -128,7 +145,7 @@ public:
 class BEND : public LINE {
 	int orthogonalP[2];
 public:
-	BEND(int _v, int orth1, int orth2)
+	BEND(int _v, int orth1, int orth2, int idx)
 	{
 	
 		orthogonalP[0] = orth1;
@@ -136,11 +153,21 @@ public:
 		v = _v;
 		type = tBEND;
 
-		Point foot = foot_of_max_perpendicular(v, point_list[orth1], point_list[orth2]);
-		point_list.push_back(foot);
+		Point _foot = foot_of_max_perpendicular(v, point_list[orth1], point_list[orth2]);
+		point_list.push_back(_foot);
 		endP[0] = computeEndpoint(v, point_list.size() - 1);
 		endP[1] = computeEndpoint(point_list.size() - 1, v);
 		point_list.pop_back();
+
+		if (idx == 0 || idx == 1)
+		{
+			path[idx].push_back(orth1);
+			path[idx].push_back(orth2);
+			foot[idx] = _foot;
+		}
+
+		slope = computeSlope(endP[0], endP[1]);
+
 		/*int tri = point_state.find_triangle(foot);
 		//outside polygon
 		if (tri == -1)
@@ -157,10 +184,10 @@ public:
 			endP[0] = computeEndpoint(v, point_list.size() - 1);
 			endP[1] = computeEndpoint(point_list.size() - 1, v);
 			point_list.pop_back();
-		}*/
+		}
 
 		slope = computeSlope(endP[0], endP[1]);
-		/*
+		
 		//compute slope
 		float orthSlope = computeSlope(point_list[orth1],point_list[orth2]);
 		if (orthSlope == 0)
@@ -284,7 +311,9 @@ Point computeEndpoint(int lineFrom, int lineTo)
 		}
 	}
 
-	if (edge == -1 || tri == -1)
+	if (edge == -1) //lineTo is the endpoint
+		return point_list[lineTo];
+	if (tri == -1)
 	{
 		printf("error in choosing triangle - computeEndpoint\n");
 		exit(69);
@@ -457,7 +486,6 @@ Point foot_of_perpendicular(int p, Edge e)
 	}
 }*/
 
-
 vector<Point> LOS::get_shortest_path_to_line(bool s)
 {
 	vector<Point> sp;
@@ -601,8 +629,78 @@ void get_remaining_path(vector<int> chain1, vector<int> chain2, vector<int>* fin
 /* Retrieves shortest path from the root of the SPT to a random point */
 vector<int> shortest_path_random_point(Point p, SPT* spt)
 {
-	vector<int> shortest_path;
+	vector<int> shortest_path; 
+	if (p.get_id() != -1)
+	{
+		shortest_path = spt->retrieve_shortest_path(p.get_id());
+		shortest_path.pop_back();
+		return shortest_path;
+	}
 	int tri = point_state.find_triangle(p);
+	int tri_spt_root = point_state.find_triangle(point_list[spt->get_root()]);
+	if (tri == tri_spt_root)
+	{
+		shortest_path.push_back(spt->get_root());
+		return shortest_path;
+	}
+	vector<int> points = polygon_list[tri];
+
+	vector<vector<int>> path;
+	for (int i = 0; i < 3; i++)
+	{
+		path.push_back(vector<int>());
+		path[i] = spt->retrieve_shortest_path(points[i]);
+	}
+
+	//extract common path
+	int idx = 0;
+	int path1_size = path[0].size();
+	int path2_size = path[1].size();
+	int path3_size = path[2].size();
+
+	int min_size = min(min(path1_size, path2_size), path3_size);
+	while (idx < min_size)
+	{
+		int path1 = path[0][idx];
+		int path2 = path[1][idx];
+		int path3 = path[2][idx];
+
+		if (path1 == path2 && path1 == path3)
+		{
+			idx++;
+			shortest_path.push_back(path1);
+		}
+		else
+			break;
+	}
+
+	int apex = path[0][idx - 1];
+
+	point_list.push_back(p);
+	int i = 0;
+	bool check = false;
+	for (i = 0; i < 3; i++)
+	{
+		bool isSeparatingDiagonal = is_left(points[(i + 1) % 3], points[(i + 2) % 3], points[i]) != is_left(points[(i + 1) % 3], points[(i + 2) % 3], apex);
+		if (isSeparatingDiagonal) {
+			check = true;
+			break;
+		}
+		
+	}
+	point_list.pop_back();
+
+	if (!check)
+	{
+		printf("huh\n");
+	}
+	vector<int> chain1 = spt->retrieve_shortest_path(points[(i + 1) % 3]);
+	vector<int> chain2 = spt->retrieve_shortest_path(points[(i + 2) % 3]);
+
+	chain1.erase(chain1.begin(), chain1.begin() + idx - 1);
+	chain2.erase(chain2.begin(), chain2.begin() + idx - 1);
+
+	/*
 	vector<int> points = polygon_list[tri];
 	vector<vector<int>> path;
 	for (int i = 0; i < 3; i++)
@@ -640,6 +738,8 @@ vector<int> shortest_path_random_point(Point p, SPT* spt)
 	if (idx == path1_size-1 && idx == path2_size-1 && idx == path3_size-1)
 		return shortest_path;
 
+	
+
 	//three paths have pattern a, a, b
 	vector<int> chain1, chain2;
 	int a1, a2, b;
@@ -676,6 +776,8 @@ vector<int> shortest_path_random_point(Point p, SPT* spt)
 		chain1 = (first < second) ? path[a2] : path[a1];
 	}
 	chain1.erase(chain1.begin(), chain1.begin() + idx-1);
+	*/
+
 
 	vector<int> funnel = funnel_path_point(chain1, chain2, p);// funnel_path(chain1, chain2).first;
 	shortest_path.insert(shortest_path.end(), funnel.begin(), funnel.end());
@@ -683,6 +785,7 @@ vector<int> shortest_path_random_point(Point p, SPT* spt)
 	return shortest_path;
 }
 
+/* path within the funnel to a point */
 vector<int> funnel_path_point(vector<int> chain1, vector<int> chain2, Point p)
 {
 	vector<int> funnel_path;
@@ -690,7 +793,7 @@ vector<int> funnel_path_point(vector<int> chain1, vector<int> chain2, Point p)
 	double first = calculate_angle_between(chain1[0], chain1[1], point_list.size() - 1);
 	double second = calculate_angle_between(chain2[0], chain2[1],point_list.size() - 1);
 	
-	if (first * second < 0) {
+	if (first * second <= 0) {
 		point_list.pop_back();
 		return funnel_path;
 	}

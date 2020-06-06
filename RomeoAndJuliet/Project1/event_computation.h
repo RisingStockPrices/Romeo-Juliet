@@ -35,6 +35,9 @@ public:
 	vector<vector<LOS*>> get_queue() {
 		return queue; 
 	}
+	vector<vector<LINE*>> getQueue() {
+		return Queue;
+	}
 	void compute_path_events();
 	void compute_boundary_events();
 	void compute_bend_events();
@@ -401,15 +404,24 @@ void EVENTS::compute_bend_events()
 	//compute shortest path to line for all (path & boundary) events
 	for (int i = 0; i < Queue.size(); i++)
 	{
+		for (int j = 0; j < Queue[i].size(); j++)
+		{
+			LINE* line = Queue[i][j];
+			Point* endP = line->getEndpoints();
+			pair<vector<int>, Point> res = shortest_path_line(endP[0], endP[1], spt[0]);
+			line->setPath(0, res);
+			res = shortest_path_line(endP[0], endP[1], spt[1]);
+			line->setPath(1, res);
+		}
+		/*
 		//path events
 		LINE* line = Queue[i][0];
 		PATH* p = (PATH*)line;
 		Point* endP = line->getEndpoints();
-		pair<vector<int>, Point> res = shortest_path_line(endP[1], point_list[p->getV2()], spt[0]);
-		line->setPathS(res.first);
-		res = shortest_path_line(endP[0], point_list[p->getV()], spt[1]);
-		line->setPathT(res.first);
-
+		pair<vector<int>, Point> res = shortest_path_line(endP[0], endP[1], spt[0]);
+		line->setPath(0, res);
+		res = shortest_path_line(endP[0], endP[1], spt[0]);
+		line->setPath(1, res);
 		//boundary events
 		for (int j = 1; j < Queue[i].size(); j++)
 		{
@@ -419,7 +431,7 @@ void EVENTS::compute_bend_events()
 			line->setPathS(res.first);
 			res = shortest_path_line(endP[0], endP[1], spt[1]);
 			line->setPathT(res.first);
-		}
+		}*/
 	}
 
 	//u and _u each correspond to u and u' in the paper (see page 7 - bend events)
@@ -437,10 +449,52 @@ void EVENTS::compute_bend_events()
 		{
 			LINE* line = Queue[i][j];
 			vector<int> path = line->getPath(0);
+			bool isBendEvent = false;
 
-			if (path.size() != prev->getPath(0).size())
-				printf("stop here");
 			it = find(path.begin(), path.end(), prev_u);
+			int orth2 = -1;
+			if (it == path.end())
+			{
+				orth2 = prev___u;
+				isBendEvent = true;
+			}
+			else if ((it + 1) != path.end() && prev__u == path.back())
+			{
+				orth2 = prev__u;
+				isBendEvent = true;
+			}
+
+			if (isBendEvent)
+			{
+				int prev_v = prev->getV();
+				BEND* bend = new BEND(prev_v, prev_u, orth2,0);
+				Point endP = bend->getEndpoints()[0];
+				point_list.push_back(endP);
+				if (i + 2 >= shortest_path.size())
+					printf("start by admitting from cradle to tomb\n");
+				else {
+					if (j == 0 && i > 0)
+					{
+						bool isBetween = in_between_line(shortest_path[i], shortest_path[i - 1], shortest_path[i + 1], point_list.size() - 1);
+						//bool isTangent = is_tangent(shortest_path[i - 1], shortest_path[i], shortest_path[i + 1], point_list.size() - 1);
+						if(isBetween)
+							Queue[i - 1].push_back(bend);
+					}
+					else
+					{
+						//bool isTangent = is_tangent(shortest_path[i], shortest_path[i + 1], shortest_path[i + 2], point_list.size() - 1);
+						//if(isTangent)
+						bool isBetween = in_between_line(shortest_path[i+1], shortest_path[i], shortest_path[i+2], point_list.size() - 1);
+						if (isBetween)	
+							Queue[i].insert(Queue[i].begin() + j, bend);
+
+					}
+				}
+				point_list.pop_back();
+			}
+
+
+			/*
 			//Type 2 scenario - u is gone from the sp
 			if (it == path.end())
 			{
@@ -481,7 +535,7 @@ void EVENTS::compute_bend_events()
 					}
 				}
 			}
-
+			*/
 			prev_u = (path.empty()) ? -1 : path.back();
 			prev___u = (path.size() > 1) ? *(path.end() - 2) : -1;
 			it = find(shortest_path.begin(), shortest_path.end(), prev_u);
