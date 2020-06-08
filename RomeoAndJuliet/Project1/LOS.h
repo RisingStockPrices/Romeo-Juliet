@@ -35,6 +35,7 @@ float compute_slope(int _p1, int _p2)
 }*/
 
 enum TYPE {
+	tERROR,
 	tPATH,
 	tBOUNDARY,
 	tBEND
@@ -147,26 +148,32 @@ class BEND : public LINE {
 public:
 	BEND(int _v, int orth1, int orth2, int idx)
 	{
-	
-		orthogonalP[0] = orth1;
-		orthogonalP[1] = orth2;
-		v = _v;
-		type = tBEND;
+		if (orth1 == _v || orth2 == _v)
+			type = tERROR;
+		else {
+			//foot on extended segment (orth1, orth2) assuming path from v isn't hindered
+			Point _foot = foot_of_max_perpendicular(_v, point_list[orth1], point_list[orth2]);
+			point_list.push_back(_foot);
+			//check if v and _foot are visible to each other, if not, abort (type Error)
 
-		Point _foot = foot_of_max_perpendicular(v, point_list[orth1], point_list[orth2]);
-		point_list.push_back(_foot);
-		endP[0] = computeEndpoint(v, point_list.size() - 1);
-		endP[1] = computeEndpoint(point_list.size() - 1, v);
-		point_list.pop_back();
+			orthogonalP[0] = orth1;
+			orthogonalP[1] = orth2;
+			v = _v;
+			type = tBEND;
+			
+			endP[0] = computeEndpoint(v, point_list.size() - 1);
+			endP[1] = computeEndpoint(point_list.size() - 1, v);
+			point_list.pop_back();
 
-		if (idx == 0 || idx == 1)
-		{
-			path[idx].push_back(orth1);
-			path[idx].push_back(orth2);
-			foot[idx] = _foot;
+			if (idx == 0 || idx == 1)
+			{
+				path[idx].push_back(orth1);
+				path[idx].push_back(orth2);
+				foot[idx] = _foot;
+			}
+
+			slope = computeSlope(endP[0], endP[1]);
 		}
-
-		slope = computeSlope(endP[0], endP[1]);
 
 		/*int tri = point_state.find_triangle(foot);
 		//outside polygon
@@ -233,13 +240,90 @@ float computeSlope(Point p1, Point p2) {
 	return (y1 - y2) / (x1 - x2);
 }
 
+/* finds (i) the triangle and (ii) edge the vector (FROM,TO) from START penetrates through first
+   START must be either FROM or TO */
+void getFirstTri(int start, int from, int to, int* edge, int* tri)
+{
+	int t = -1;
+	int e = -1;
+	int id = point_list[start].get_id();
+	if (id != -1) //polygon vertex
+	{
+		vector<int> candidateTri = vertex_triangle_list[id];
+		for (int i = 0; i < candidateTri.size(); i++)
+		{
+			t = candidateTri[i];
+			vector<int> vertices = polygon_list[t];
+			int v[2];
+			for (int j = 0; j < 3; j++)
+			{
+				if (vertices[j] == id) {
+					v[0] = vertices[(j + 1) % 3];
+					v[1] = vertices[(j + 2) % 3];
+					break;
+				}
+			}
+			bool valid = check_penetration(from,to,id,v[0], v[1]);
+			if (valid) {
+				vector<int> edges = triangle_edge_list[t];
+				for (int j = 0; j < 3; j++)
+				{
+					if (diagonal_with_edge_list[edges[j]].check_same_edge(v[0], v[1]))
+					{
+						e = edges[j];
+						break;
+					}
+				}
+				break;
+			}
+			t = -1;
+		}
+	}
+	else //test point and temporary points
+	{
+		t = point_state.find_triangle(point_list[start]);
+		vector<int> vertices = polygon_list[t];
+		int v[2];
+		for (int j = 0; j < 3; j++)
+		{
+			int first = vertices[j];
+			int second = vertices[(j + 1) % 3];
+			bool penetrate = check_penetration(from, to, start, first, second);
+			bool onSameSide = all_left_or_right(vector<int>(from, to), first, second);
+			if (penetrate && onSameSide)
+			{
+				v[0] = first;
+				v[1] = second;
+				break;
+			}
+		}
+
+		vector<int> edges = triangle_edge_list[t];
+		for (int j = 0; j < 3; j++)
+		{
+			if (diagonal_with_edge_list[edges[j]].check_same_edge(v[0], v[1]))
+			{
+				e = edges[j];
+				break;
+			}
+		}
+	}
+	*tri = t;
+	*edge = e;
+	
+}
+bool isVisible(int from, int to)
+{
+	return false;
+}
 Point computeEndpoint(int lineFrom, int lineTo)
 {
 	//find triangle that the line penetrates through
 	//and the edge it penetrates
 	int tri = -1;
 	int edge = -1;
-	
+	getFirstTri(lineTo, lineFrom, lineTo, &edge, &tri);
+	/*
 	int lineToId = point_list[lineTo].get_id();
 	//lineTo is a polygon vertex (and not a test point)
 	if (lineToId != -1) {
@@ -293,12 +377,7 @@ Point computeEndpoint(int lineFrom, int lineTo)
 				v[1] = second;
 				break;
 			}
-			/*
-			if (vertices[j] == lineFrom) {
-				v[0] = vertices[(j + 1) % 3];
-				v[1] = vertices[(j + 2) % 3];
-				break;
-			}*/
+			
 		}
 		vector<int> edges = triangle_edge_list[tri];
 		for (int j = 0; j < 3; j++)
@@ -309,7 +388,7 @@ Point computeEndpoint(int lineFrom, int lineTo)
 				break;
 			}
 		}
-	}
+	}*/
 
 	if (edge == -1) //lineTo is the endpoint
 		return point_list[lineTo];
@@ -789,6 +868,10 @@ vector<int> shortest_path_random_point(Point p, SPT* spt)
 vector<int> funnel_path_point(vector<int> chain1, vector<int> chain2, Point p)
 {
 	vector<int> funnel_path;
+	
+	if (chain1.size() == 1 || chain2.size() == 1)
+		return funnel_path;
+	
 	point_list.push_back(p);
 	double first = calculate_angle_between(chain1[0], chain1[1], point_list.size() - 1);
 	double second = calculate_angle_between(chain2[0], chain2[1],point_list.size() - 1);
@@ -811,17 +894,21 @@ vector<int> funnel_path_point(vector<int> chain1, vector<int> chain2, Point p)
 		prev = second;
 	}
 
+	bool check = false;
 	for (int i = 1; i < main_chain->size() - 1; i++)
 	{
 		funnel_path.push_back((*main_chain)[i]);
 		double angle = calculate_angle_between((*main_chain)[i], (*main_chain)[i + 1], point_list.size() - 1);
 		if (angle * prev < 0)
 		{
+			check = true;
 			break;
 		}
 		prev = angle;
 	}
 
+	if (!check)
+		funnel_path.push_back(main_chain->back());
 	point_list.pop_back();
 	return funnel_path;
 }

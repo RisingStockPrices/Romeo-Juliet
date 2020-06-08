@@ -453,7 +453,7 @@ void EVENTS::compute_bend_events()
 
 			it = find(path.begin(), path.end(), prev_u);
 			int orth2 = -1;
-			if (it == path.end())
+			if (it == path.end())//type 2 (spline vertex deleted)
 			{
 				orth2 = prev___u;
 				isBendEvent = true;
@@ -468,29 +468,31 @@ void EVENTS::compute_bend_events()
 			{
 				int prev_v = prev->getV();
 				BEND* bend = new BEND(prev_v, prev_u, orth2,0);
-				Point endP = bend->getEndpoints()[0];
-				point_list.push_back(endP);
-				if (i + 2 >= shortest_path.size())
-					printf("start by admitting from cradle to tomb\n");
-				else {
-					if (j == 0 && i > 0)
-					{
-						bool isBetween = in_between_line(shortest_path[i], shortest_path[i - 1], shortest_path[i + 1], point_list.size() - 1);
-						//bool isTangent = is_tangent(shortest_path[i - 1], shortest_path[i], shortest_path[i + 1], point_list.size() - 1);
-						if(isBetween)
-							Queue[i - 1].push_back(bend);
-					}
-					else
-					{
-						//bool isTangent = is_tangent(shortest_path[i], shortest_path[i + 1], shortest_path[i + 2], point_list.size() - 1);
-						//if(isTangent)
-						bool isBetween = in_between_line(shortest_path[i+1], shortest_path[i], shortest_path[i+2], point_list.size() - 1);
-						if (isBetween)	
-							Queue[i].insert(Queue[i].begin() + j, bend);
+				if (bend->getType() != tERROR) {
+					Point endP = bend->getEndpoints()[0];
+					point_list.push_back(endP);
+					if (i + 2 >= shortest_path.size())
+						printf("start by admitting from cradle to tomb\n");
+					else {
+						if (j == 0 && i > 0)
+						{
+							bool isBetween = in_between_line(shortest_path[i], shortest_path[i - 1], shortest_path[i + 1], point_list.size() - 1);
+							//bool isTangent = is_tangent(shortest_path[i - 1], shortest_path[i], shortest_path[i + 1], point_list.size() - 1);
+							if (isBetween)
+								Queue[i - 1].push_back(bend);
+						}
+						else
+						{
+							//bool isTangent = is_tangent(shortest_path[i], shortest_path[i + 1], shortest_path[i + 2], point_list.size() - 1);
+							//if(isTangent)
+							bool isBetween = in_between_line(shortest_path[i + 1], shortest_path[i], shortest_path[i + 2], point_list.size() - 1);
+							if (isBetween)
+								Queue[i].insert(Queue[i].begin() + j, bend);
 
+						}
 					}
+					point_list.pop_back();
 				}
-				point_list.pop_back();
 			}
 
 

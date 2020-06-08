@@ -893,16 +893,21 @@ float normalize_angle_0_pi(float angle)
 /* returns whether line (rot,v) lies within (rot,p1) and (rot,p2) */
 bool in_between_line(int rot, int p1, int p2, int v)
 {
-	float angle = atan2(rot, p1);
-	float angle2 = atan2(rot, p2);
-	float diff = angle2 - angle2;
+	float angle = calculate_angle(rot, p1);//calculateatan2(rot, p1);
+	float angle2 = calculate_angle(rot, p2);// atan2(rot, p2);
+	float diff = angle2 - angle;
 
-	diff = normalize_angle_0_pi(diff);
+	//diff = normalize_angle_0_pi(diff);
 
-	float angle_v = atan2(rot, v);
-	angle_v = normalize_angle_0_pi(angle_v);
+	float angle_v = normalize_angle_0_pi(calculate_angle(rot, v) -angle);// atan2(rot, v);
+	
+	if (angle_v * diff > 0 && abs(angle_v) < abs(diff))
+		return false;
+	
+	angle_v -= PI;
+	if (angle_v * diff > 0 && abs(angle_v) < abs(diff))
+		return false;
 
-	if (diff > angle_v)
-		return true;
-	else return false;
+	return true;
+
 }
