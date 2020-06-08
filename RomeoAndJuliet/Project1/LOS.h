@@ -10,6 +10,7 @@ vector<int> funnel_path_point(vector<int> chain1, vector<int> chain2, Point p);
 pair<vector<int>,Point> funnel_path(vector<int> chain1, vector<int> chain2);
 Point* get_line_intersection(int p1, int p2, int q1, int q2);
 float computeSlope(Point p1, Point p2);
+bool isVisible(int from, int to);
 Point computeEndpoint(int lineFrom, int lineTo);
 Point foot_of_max_perpendicular(int p, Point origin, Point dest);
 Point foot_of_perpendicular(int p, Point origin, Point dest);
@@ -155,24 +156,32 @@ public:
 			Point _foot = foot_of_max_perpendicular(_v, point_list[orth1], point_list[orth2]);
 			point_list.push_back(_foot);
 			//check if v and _foot are visible to each other, if not, abort (type Error)
-
-			orthogonalP[0] = orth1;
-			orthogonalP[1] = orth2;
-			v = _v;
-			type = tBEND;
 			
-			endP[0] = computeEndpoint(v, point_list.size() - 1);
-			endP[1] = computeEndpoint(point_list.size() - 1, v);
-			point_list.pop_back();
-
-			if (idx == 0 || idx == 1)
+			if (isVisible(_v, point_list.size() - 1))
 			{
-				path[idx].push_back(orth1);
-				path[idx].push_back(orth2);
-				foot[idx] = _foot;
-			}
+				orthogonalP[0] = orth1;
+				orthogonalP[1] = orth2;
+				v = _v;
+				type = tBEND;
 
-			slope = computeSlope(endP[0], endP[1]);
+				endP[0] = computeEndpoint(v, point_list.size() - 1);
+				endP[1] = computeEndpoint(point_list.size() - 1, v);
+
+				if (idx == 0 || idx == 1)
+				{
+					path[idx].push_back(orth1);
+					path[idx].push_back(orth2);
+					foot[idx] = _foot;
+				}
+
+				slope = computeSlope(endP[0], endP[1]);
+			}
+			else
+			{
+				type = tERROR;
+			}
+			point_list.pop_back();
+			
 		}
 
 		/*int tri = point_state.find_triangle(foot);
@@ -310,20 +319,104 @@ void getFirstTri(int start, int from, int to, int* edge, int* tri)
 	}
 	*tri = t;
 	*edge = e;
-	
+}
+
+int getFinalEdge(int start, int from, int to)
+{
+	int edge = -1;
+	int tri = -1;
+	getFirstTri(start, from, to, &edge, &tri);
+	if (edge == -1)
+		return edge;
+	if (tri == -1)
+		printf("o fatherland fatherland show us the sign\n");
+
+	while (edge < diagonal_list.size())
+	{
+		int new_tri = -1;
+		int new_edge = -1;
+		int v[3];
+		int* t = diagonal_list[edge].get_triangle();
+		if (t[0] == tri)
+			new_tri = t[1];
+		else
+			new_tri = t[0];
+
+		vector<int> vertices = polygon_list[new_tri];
+		for (int i = 0; i < 3; i++)
+		{
+			if (diagonal_list[edge].check_same_point(vertices[i]) == -1) {
+				v[0] = vertices[i];//the vertex not included in the EDGE
+				v[1] = vertices[(i + 1) % 3];
+				v[2] = vertices[(i + 2) % 3];
+				break;
+			}
+		}
+		tri = new_tri;
+		vector<int> edges = triangle_edge_list[new_tri];
+
+		bool penetrateLeft = check_penetration(from,to,start, v[0], v[1]);
+		int otherPoint = (penetrateLeft) ? v[1] : v[2];
+
+		for (int i = 0; i < 3; i++)
+		{
+			if (diagonal_with_edge_list[edges[i]].check_same_edge(v[0], otherPoint))
+			{
+				new_edge = edges[i];
+				break;
+			}
+		}
+
+		if (new_edge != -1)
+			edge = new_edge;
+	}
+
+	return edge;
 }
 bool isVisible(int from, int to)
 {
-	return false;
+	int edge = getFinalEdge(from, from, to);
+	if (edge == -1)
+	{
+		printf("life is a cabaret old chum come to the cabar---et\n");
+		return false;
+	}
+	int v1 = diagonal_with_edge_list[edge].get_origin();
+	int v2 = diagonal_with_edge_list[edge].get_dest();
+	//reached polygon boundary
+	Point* p = get_line_intersection(from, to, v1, v2);
+	if (p == NULL) {
+		printf("the moment will come when the world is mine\n");
+		return false;
+	}
+	float px = p->get_x();
+	if ((point_list[from].get_x() - px) * (point_list[to].get_x() - px) <= 0)
+		return true;
+	else return false;
 }
 Point computeEndpoint(int lineFrom, int lineTo)
 {
+	int edge = getFinalEdge(lineTo, lineFrom, lineTo);
+	if (edge == -1)
+		return point_list[lineTo];
+
+	int v1 = diagonal_with_edge_list[edge].get_origin();
+	int v2 = diagonal_with_edge_list[edge].get_dest();
+	//reached polygon boundary
+	Point* p = get_line_intersection(lineFrom, lineTo, v1, v2);
+	if (p != NULL)
+		return *p;
+	else
+		return Point(-1, -1);
+
+
+	/*
 	//find triangle that the line penetrates through
 	//and the edge it penetrates
 	int tri = -1;
 	int edge = -1;
-	getFirstTri(lineTo, lineFrom, lineTo, &edge, &tri);
-	/*
+	//getFirstTri(lineTo, lineFrom, lineTo, &edge, &tri);
+	
 	int lineToId = point_list[lineTo].get_id();
 	//lineTo is a polygon vertex (and not a test point)
 	if (lineToId != -1) {
@@ -388,7 +481,7 @@ Point computeEndpoint(int lineFrom, int lineTo)
 				break;
 			}
 		}
-	}*/
+	}
 
 	if (edge == -1) //lineTo is the endpoint
 		return point_list[lineTo];
@@ -449,7 +542,7 @@ Point computeEndpoint(int lineFrom, int lineTo)
 	if (p != NULL)
 		return *p;
 	else
-		return Point(-1, -1);
+		return Point(-1, -1);*/
 }
 
 enum event_type {
