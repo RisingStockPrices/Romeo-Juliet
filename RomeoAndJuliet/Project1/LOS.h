@@ -28,7 +28,6 @@ protected:
 	vector<vector<int>> path; //stores path from s or t to the line of sight
 	Point foot[2];
 public:
-
 	LINE() {
 		path.push_back(vector<int>());
 		path.push_back(vector<int>());

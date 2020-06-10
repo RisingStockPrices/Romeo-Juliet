@@ -116,33 +116,20 @@ void EVENTS::compute_boundary_events()
 				{
 					double angle = 0;
 					if (j >= s_size)
-					{
 						angle = calculate_angle_between(cur, vertex_id, cur, prev);
-					}
-					else
-					{
-						angle = calculate_angle_between(cur, vertex_id, prev, cur);
-					}
 
+					else
+						angle = calculate_angle_between(cur, vertex_id, prev, cur);
 					angle = abs(normalize_angle(angle));
-					
-					//double angle = angle_from_vector(prev,cur, next,vertex_id);//calculate_angle_between_positive(cur, vertex_id, cur, prev);// , cur);
 					BOUNDARY* boundary = new BOUNDARY(cur, vertex_id,angle);
 					Queue[i - 1].push_back(boundary);
-					/*
-					float angle = calculate_angle_between_positive(cur, vertex_id, prev, cur);
-					LOS* los = new LOS(next_line_id++, cur, vertex_id, cur, angle, j < s_size ? BOUNDARY_S : BOUNDARY_T);// BOUNDARY);
-					los->compute_other_endpoint(false);
-					queue[i-1].push_back(los);*/
-
 				}
 			}
 		}
 
 		for (int j = 0; j < Queue[i - 1].size(); j++)
-		{
 			sort(Queue[i - 1].begin(), Queue[i - 1].end(), compare_angle);
-		}
+		
 	}
 }
 
@@ -160,7 +147,6 @@ void EVENTS::compute_bend_events()
 			res = shortest_path_line(endP[0], endP[1], spt[1]);
 			line->setPath(1, res);
 		}
-
 	}
 
 	//u and _u each correspond to u and u' in the paper (see page 7 - bend events)
@@ -205,17 +191,14 @@ void EVENTS::compute_bend_events()
 					else {
 						if (j == 0 && i > 0)
 						{
-							bool isBetween = in_between_line(shortest_path[i], shortest_path[i - 1], shortest_path[i + 1], point_list.size() - 1);
-							//bool isTangent = is_tangent(shortest_path[i - 1], shortest_path[i], shortest_path[i + 1], point_list.size() - 1);
-							if (isBetween)
+							bool isTangent = is_tangent(shortest_path[i - 1], shortest_path[i], shortest_path[i + 1], point_list.size() - 1);
+							if (isTangent)
 								Queue[i - 1].push_back(bend);
 						}
 						else
 						{
-							//bool isTangent = is_tangent(shortest_path[i], shortest_path[i + 1], shortest_path[i + 2], point_list.size() - 1);
-							//if(isTangent)
-							bool isBetween = in_between_line(shortest_path[i + 1], shortest_path[i], shortest_path[i + 2], point_list.size() - 1);
-							if (isBetween)
+							bool isTangent = is_tangent(shortest_path[i], shortest_path[i + 1], shortest_path[i + 2], point_list.size() - 1);
+							if(isTangent)
 								Queue[i].insert(Queue[i].begin() + j, bend);
 
 						}
@@ -232,6 +215,74 @@ void EVENTS::compute_bend_events()
 			else
 				prev__u = *(it + 1);
 			prev = line;
+		}
+	}
+
+	prev = Queue[Queue.size()-1][0];
+	prev_path = prev->getPath(1);
+	prev_u = prev_path.back();
+	it = find(shortest_path.begin(), shortest_path.end(), prev_u);
+	int sp_size = shortest_path.size();
+	prev__u = *(it - 1);
+	prev___u = -1;
+
+	for (int i = Queue.size()-1;i>=0;i--)//0; i < Queue.size(); i++)
+	{
+		for (int j = Queue[i].size()-1; j >= 0; j--)//; j < Queue[i].size(); j++)
+		{
+			LINE* line = Queue[i][j];
+			if (line->getType() != tBEND) {
+				vector<int> path = line->getPath(1);
+				bool isBendEvent = false;
+
+				it = find(path.begin(), path.end(), prev_u);
+				int orth2 = -1;
+				if (it == path.end())//type 2 (spline vertex deleted)
+				{
+					orth2 = prev___u;
+					isBendEvent = true;
+				}
+				else if ((it + 1) != path.end() && prev__u == path.back())
+				{
+					orth2 = prev__u;
+					isBendEvent = true;
+				}
+
+				if (isBendEvent)
+				{
+					int prev_v = prev->getV();
+					BEND* bend = new BEND(prev_v, prev_u, orth2, 0);
+					if (bend->getType() != tERROR) {
+						Point endP = bend->getEndpoints()[0];
+						point_list.push_back(endP);
+						if (i + 2 >= shortest_path.size())
+							printf("start by admitting from cradle to tomb\n");
+						else {
+
+							bool isTangent = is_tangent(shortest_path[i], shortest_path[i+1], shortest_path[i + 2], point_list.size() - 1);
+							if (isTangent)
+							{
+				
+								if (j == 0 && i > 0)
+									Queue[i - 1].push_back(bend);
+								else		
+									Queue[i].insert(Queue[i].begin() + j, bend);
+							}
+						
+						}
+						point_list.pop_back();
+					}
+				}
+
+				prev_u = (path.empty()) ? -1 : path.back();
+				prev___u = (path.size() > 1) ? *(path.end() - 2) : -1;
+				it = find(shortest_path.begin(), shortest_path.end(), prev_u);
+				if (it == shortest_path.end() || it == shortest_path.begin())
+					prev__u = -1;
+				else
+					prev__u = *(it - 1);
+				prev = line;
+			}
 		}
 	}
 	
