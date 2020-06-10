@@ -1082,8 +1082,9 @@ void display() {
 		glVertex2d(points[1].get_x(), points[1].get_y());
 	}
 	glEnd();
+	glLineWidth(2);
 	glBegin(GL_LINES);
-	set_color_rgb(129, 129, 129);//grey
+	set_color_rgb(178, 102, 255);// 9, 129, 129);//grey
 	for (int i = 0; i < (int)shortest_path_to_line.size() - 1; i++)
 	{
 		glVertex2d(shortest_path_to_line[i].get_x(), shortest_path_to_line[i].get_y());

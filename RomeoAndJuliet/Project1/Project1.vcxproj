@@ -164,6 +164,7 @@
     <ClInclude Include="ShortestPathTree.h" />
     <ClInclude Include="SNode.h" />
     <ClInclude Include="SPTnode.h" />
+    <ClInclude Include="storage.h" />
     <ClInclude Include="tangent.h" />
     <ClInclude Include="TNODE.h" />
     <ClInclude Include="Tree.h" />

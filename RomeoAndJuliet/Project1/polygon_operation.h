@@ -67,6 +67,49 @@ double calculate_angle_between(int p1, int p2, int q1, int q2)
 	return temp;
 }
 
+double angle_from_vector(int prev, int cur, int next,int v)//start, int end, int v)
+{
+	double start = calculate_angle(cur, prev);
+	double v_angle = calculate_angle(cur, v);
+
+	double diff = v_angle - start;
+
+	double nextPath = calculate_angle_between(cur, next, prev, cur);
+	
+	if (abs(nextPath) > PI / 2 && abs(nextPath) < PI * 3 / 2)
+		diff = -diff;
+	/*
+	if (nextPath > PI)
+		nextPath = 2 * PI - nextPath;
+	else if (nextPath < -PI)
+		nextPath += 2 * PI;
+	else if (nextPath < 0)
+		nextPath += PI;
+
+	if (nextPath > PI / 2)
+		diff = -diff;
+		*/
+
+
+	if (diff > PI)
+		diff -= PI;
+	else if (diff < -PI)
+		diff += 2 * PI;
+	else if (diff < 0)
+		diff += PI;
+	
+	return diff;
+	
+	/*double angle = calculate_angle(start, end);
+	double v_angle = calculate_angle(start, v);
+	double diff = v_angle - angle; //2pi ~ -2pi
+	if (diff < 0)
+		diff += 2*PI;
+	if (diff > PI)
+		diff -= PI;
+	return diff;*/
+
+}
 
 double calculate_angle_between(int apex, int first, int second)
 {
@@ -88,7 +131,7 @@ double calculate_angle_between(int apex, int first, int second)
 	return temp;*/
 }
 
-/* returns angle between to lines ranging in 0~PI
+/* returns angle between vector (q1,q2) and LINE (p1,p2) ranging in 0~PI
 	used to sort lines of sight in event_computation.h 
 	q1,q2 are the base line's endpoints */
 double calculate_angle_between_positive(int p1, int p2, int q1, int q2)
@@ -910,4 +953,96 @@ bool in_between_line(int rot, int p1, int p2, int v)
 
 	return true;
 
+}
+
+/* returns the pointer the to Point such that the point is the intersection of
+the extend line of (p1, p2) and the bounded line (q1,q2) (segment) */
+Point* get_line_intersection(int p1, int p2, int q1, int q2)
+{
+	Point A = point_list[p1];
+	Point B = point_list[p2];
+	Point C = point_list[q1];
+	Point D = point_list[q2];
+
+	point_type a1 = B.get_y() - A.get_y();
+	point_type b1 = A.get_x() - B.get_x();
+	point_type c1 = a1 * (A.get_x()) + b1 * (A.get_y());
+
+	point_type a2 = D.get_y() - C.get_y();
+	point_type b2 = C.get_x() - D.get_x();
+	point_type c2 = a2 * (C.get_x()) + b2 * (C.get_y());
+
+	point_type determinant = a1 * b2 - a2 * b1;
+
+	//the two lines are parallel
+	if (determinant == 0)
+		return NULL;
+
+	point_type x = (b2 * c1 - b1 * c2) / determinant;
+	point_type y = (a1 * c2 - a2 * c1) / determinant;
+	Point newP = Point(x, y);
+	return &newP;
+}
+
+double computeSlope(Point p1, Point p2) {
+	double x1 = p1.get_x();
+	double x2 = p2.get_x();
+	double y1 = p1.get_y();
+	double y2 = p2.get_y();
+
+	if (y1 == y2)
+		return 0;
+	if (x1 == x2)
+		return std::numeric_limits<double>::infinity();
+
+	return (y1 - y2) / (x1 - x2);
+}
+
+/* Returns the foot of perpendicular from point p to edge (p1, p2) */
+Point foot_of_perpendicular(int p, Point origin, Point dest)
+{
+	Point pp = point_list[p];
+	double ax = origin.get_x();
+	double ay = origin.get_y();
+	double bx = dest.get_x();
+	double by = dest.get_y();
+	double px = pp.get_x();
+	double py = pp.get_y();
+
+	if (ax == bx) //vertical line
+	{
+		return Point(ax, py);
+	}
+	else if (ay == by)//horizontal line
+	{
+		return Point(px, ay);
+	}
+	else if (origin.check_equal(pp) || dest.check_equal(pp))
+	{
+		return pp;
+	}
+	else {
+		double slope = (double)(ay - by) / (ax - bx);
+		double qx = slope / (1 + slope * slope) * (py + (double)px / slope + slope * ax - ay);
+		double qy = ay + slope * (qx - ax);
+
+		return Point(qx, qy);
+	}
+}
+
+/* Returns whether vector(from,to) is  in the smaller angle that the two vectors v(apex,first) and v(apex,second) make */
+bool check_penetration(int from, int to, int apex, int first, int second)
+{
+	if (apex == first || apex == second)
+		return false;
+
+	double firstA = calculate_angle_between(apex, first, from, to);
+	double secondA = calculate_angle_between(apex, second, from, to);
+
+	if (firstA * secondA > 0)
+		return false;
+	else if (abs(firstA) + abs(secondA) >= PI)
+		return false;
+	else
+		return true;
 }

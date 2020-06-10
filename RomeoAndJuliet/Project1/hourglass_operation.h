@@ -1011,13 +1011,6 @@ Hourglass concatenateOpenOpen(Hourglass& _left, Hourglass& _right)
 		right_lower_chain = rightChainList[0];
 	}
 
-
-
-
-
-
-
-
 	vector<int> left_upper_points = left_upper_chain->get_point_list();
 	vector<int> left_lower_points = left_lower_chain->get_point_list();
 	vector<int> right_lower_points = right_lower_chain->get_point_list();
