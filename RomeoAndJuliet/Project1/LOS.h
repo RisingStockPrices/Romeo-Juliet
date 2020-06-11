@@ -159,6 +159,10 @@ public:
 			
 		}
 	}
+	void setAngle(double _ang)
+	{
+		angle = _ang;
+	}
 };
 
 

@@ -36,6 +36,7 @@ public:
 	void compute_path_events();
 	void compute_boundary_events();
 	void compute_bend_events();
+	double computeMinSum(void);
 };
 
 
@@ -192,15 +193,20 @@ void EVENTS::compute_bend_events()
 						if (j == 0 && i > 0)
 						{
 							bool isTangent = is_tangent(shortest_path[i - 1], shortest_path[i], shortest_path[i + 1], point_list.size() - 1);
-							if (isTangent)
+							if (isTangent) {
+								double angle = calculate_angle_between(shortest_path[i], point_list.size() - 1, shortest_path[i], shortest_path[i - 1]);
+								bend->setAngle(angle);
 								Queue[i - 1].push_back(bend);
+							}
 						}
 						else
 						{
 							bool isTangent = is_tangent(shortest_path[i], shortest_path[i + 1], shortest_path[i + 2], point_list.size() - 1);
-							if(isTangent)
-								Queue[i].insert(Queue[i].begin() + j, bend);
-
+							if (isTangent) {
+								double angle = calculate_angle_between(shortest_path[i + 1], point_list.size() - 1, shortest_path[i + 1], shortest_path[i]);
+								bend->setAngle(angle);
+								Queue[i].push_back(bend);// insert(Queue[i].begin() + j, bend);
+							}
 						}
 					}
 					point_list.pop_back();
@@ -260,15 +266,11 @@ void EVENTS::compute_bend_events()
 						else {
 
 							bool isTangent = is_tangent(shortest_path[i], shortest_path[i+1], shortest_path[i + 2], point_list.size() - 1);
+							double angle = calculate_angle_between(shortest_path[i + 1], point_list.size()-1, shortest_path[i],shortest_path[i+1]);
+							angle = abs(normalize_angle(angle));
+							bend->setAngle(angle);
 							if (isTangent)
-							{
-				
-								if (j == 0 && i > 0)
-									Queue[i - 1].push_back(bend);
-								else		
-									Queue[i].insert(Queue[i].begin() + j, bend);
-							}
-						
+								Queue[i].push_back(bend);// insert(Queue[i].begin() + j, bend);						
 						}
 						point_list.pop_back();
 					}
@@ -285,5 +287,62 @@ void EVENTS::compute_bend_events()
 			}
 		}
 	}
-	
+
+ 	for (int i = 0; i < Queue.size(); i++)
+		sort(Queue[i].begin(), Queue[i].end(), compare_angle);
+}
+
+double EVENTS::computeMinSum(void)
+{
+	double candidateSlope[4];
+	double candidateDist[4];
+	LINE* prev = Queue[0][0];
+
+	for (int i = 0; i < Queue.size(); i++)
+	{
+		for (int j = 0; j < Queue[i].size(); j++)
+		{
+			LINE* line = Queue[i][j];
+			int u_s = line->getPath(0).back();
+			int u_t = line->getPath(1).back();
+			int v = line->getV();
+
+			double vx = point_list[v].get_x();
+			double vy = point_list[v].get_y();
+
+			double a = point_list[u_s].get_x()- vx;
+			double b = vy - point_list[u_s].get_y();
+			double c = point_list[u_t].get_x() - vx;
+			double d = vy - point_list[u_t].get_y();
+
+			if (a == 0 || c == 0)
+			{
+				printf("error\n");
+				return -1;
+			}
+			candidateSlope[0] = -b / a;
+			candidateSlope[1] = -d / c;
+
+			if (b + d == 0) {
+				candidateSlope[2] = std::numeric_limits<double>::infinity();
+				if (a + c < 0)
+					candidateSlope[2] = -candidateSlope[2];
+			}
+
+			if (b - d == 0)
+			{
+				candidateSlope[3] = std::numeric_limits<double>::infinity();
+				if (a - c < 0)
+					candidateSlope[3] = -candidateSlope[3];
+			}
+
+			double slope1 = prev->getSlope();
+			double slope2 = line->getSlope();
+
+
+
+
+			prev = line;
+		}
+	}
 }
