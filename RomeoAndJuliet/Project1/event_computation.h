@@ -328,18 +328,22 @@ double EVENTS::computeMinSum(void)
 				if (a + c < 0)
 					candidateSlope[2] = -candidateSlope[2];
 			}
-
+			else
+				candidateSlope[2] = (a + c) / (b + d);
 			if (b - d == 0)
 			{
 				candidateSlope[3] = std::numeric_limits<double>::infinity();
 				if (a - c < 0)
 					candidateSlope[3] = -candidateSlope[3];
 			}
+			else
+				candidateSlope[3] = (a - c) / (b - d);
 
 			double slope1 = prev->getSlope();
 			double slope2 = line->getSlope();
 
-
+			for (int k = 0; k < 4; k++)
+				candidateDist[k] = line->Dist_from_u_to_line(0,candidateSlope[k])+line->Dist_from_u_to_line(1,candidateSlope[k]);
 
 
 			prev = line;

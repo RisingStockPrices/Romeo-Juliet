@@ -15,6 +15,7 @@ enum TYPE {
 	tERROR,
 	tPATH,
 	tBOUNDARY,
+	tBEND_T1, //case where boundary cases overlap with bend events (type 1 (i))
 	tBEND
 };
 
@@ -27,6 +28,9 @@ protected:
 	double angle=0;
 	vector<vector<int>> path; //stores path from s or t to the line of sight
 	Point foot[2];
+	int distance[2];
+	double candidateSlope[4];
+	double candidateDist[4];
 public:
 	LINE() {
 		path.push_back(vector<int>());
@@ -46,6 +50,10 @@ public:
 	{
 		return type;
 	}
+	double getSlope()
+	{
+		return slope;
+	}
 	void setPathS(vector<int> path_)
 	{
 		path[0] = path_;
@@ -56,6 +64,15 @@ public:
 		{
 			path[idx] = res.first;
 			foot[idx] = res.second;
+
+			distance[idx] = 0;
+			/*for (int i = 0; i < path[idx].size()-1; i++)
+			{
+				distance[idx] += dist(path[idx][i], path[idx][i + 1]);
+			}*/
+			point_list.push_back(foot[idx]);
+			distance[idx] += dist(path[idx].back(), point_list.size() - 1);
+			point_list.pop_back();
 		}
 	}
 	vector<int> getPath(int idx)
@@ -82,6 +99,14 @@ public:
 		}
 		return sPath;
 	}
+	double Dist_from_u_to_line(int idx,double _slope)
+	{
+		Point _v = point_list[v];
+		Point u = point_list[path[idx].back()];
+		double d = abs(_slope * u.get_x() - slope * _v.get_x() + _v.get_y()-u.get_y());
+		return d;
+	}
+	
 };
 
 class PATH : public LINE {
@@ -113,7 +138,7 @@ public:
 		boundary_point = _v2;
 		endP[0] = computeEndpoint(v, boundary_point);//point_list[_v2];
 		endP[1] = computeEndpoint(boundary_point, v);
-		slope = computeSlope(endP[0], endP[1]);
+		slope = computeSlope(point_list[_v], point_list[_v2]);// endP[0], endP[1]);
 		angle = _ang;
 	}
 	
@@ -122,6 +147,20 @@ public:
 class BEND : public LINE {
 	int orthogonalP[2];
 public:
+	BEND(int _v, int boundary_point, SPT* spt_s, SPT* spt_t)
+	{
+		type = tBEND_T1;
+		v = _v;
+		endP[0] = point_list[_v];
+		endP[1] = point_list[boundary_point];
+
+		path[0] = spt_s->retrieve_shortest_path(_v);
+		path[1] = spt_s->retrieve_shortest_path(boundary_point);
+		foot[0] = point_list[_v];
+		foot[1] = point_list[boundary_point];
+
+		slope = computeSlope(endP[0], endP[1]);
+	}
 	BEND(int _v, int orth1, int orth2, int idx)
 	{
 		if (orth1 == _v || orth2 == _v)

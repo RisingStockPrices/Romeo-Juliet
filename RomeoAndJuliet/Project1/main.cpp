@@ -785,6 +785,7 @@ void add_test_point(int button, int state, int x, int y) {
 				events->compute_path_events();
 				events->compute_boundary_events();
 				events->compute_bend_events();
+				//events->computeMinSum();
 				//events->compute_bend_events();
 
 				
