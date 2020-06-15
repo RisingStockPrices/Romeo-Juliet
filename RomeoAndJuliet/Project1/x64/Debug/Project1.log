@@ -43,53 +43,49 @@ c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\sptnode.h(221): wa
 c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\sptnode.h(223): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
 c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\sptnode.h(227): warning C4305: '-=': 'double'에서 'float'(으)로 잘립니다.
 c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\sptnode.h(229): warning C4305: '+=': 'double'에서 'float'(으)로 잘립니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(74): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(74): warning C4244: '+=': 'point_type'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(174): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(181): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(182): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(382): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(383): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(412): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(413): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(437): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(457): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(458): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(482): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(531): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(532): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(533): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(595): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(610): warning C4267: '인수': 'size_t'에서 '_Ty'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(69): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(69): warning C4244: '+=': 'point_type'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(169): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(176): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(177): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(374): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(375): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(404): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(405): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(429): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(449): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(450): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(474): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(523): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(524): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(525): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(587): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(602): warning C4267: '인수': 'size_t'에서 '_Ty'(으)로 변환하면서 데이터가 손실될 수 있습니다.
           with
           [
               _Ty=int
           ]
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(611): warning C4267: '인수': 'size_t'에서 '_Ty'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\los.h(603): warning C4267: '인수': 'size_t'에서 '_Ty'(으)로 변환하면서 데이터가 손실될 수 있습니다.
           with
           [
               _Ty=int
           ]
 c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(7): warning C4005: 'INT_MAX': 매크로 재정의
   c:\program files (x86)\microsoft visual studio\2017\community\vc\tools\msvc\14.16.27023\include\limits.h(35): note: 'INT_MAX'의 이전 정의를 참조하십시오.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(64): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(65): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(67): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(68): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(106): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(124): warning C4244: '인수': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(195): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(197): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(204): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(206): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(231): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(235): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(237): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(268): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(269): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(270): warning C4244: '인수': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(154): warning C4101: '_u' :참조되지 않은 지역 변수입니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(154): warning C4101: 'u' :참조되지 않은 지역 변수입니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(86): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(87): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(89): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(90): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(128): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(169): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(242): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(249): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(274): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(278): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(280): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(311): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(201): warning C4101: '_u' :참조되지 않은 지역 변수입니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(201): warning C4101: 'u' :참조되지 않은 지역 변수입니다.
 c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\main.cpp(290): warning C4244: '인수': 'point_type'에서 'GLfloat'(으)로 변환하면서 데이터가 손실될 수 있습니다.
 c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\main.cpp(297): warning C4244: '인수': 'point_type'에서 'GLfloat'(으)로 변환하면서 데이터가 손실될 수 있습니다.
 c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\main.cpp(306): warning C4244: '초기화 중': 'int'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
@@ -113,5 +109,5 @@ c:\program files (x86)\microsoft visual studio\2017\community\vc\tools\msvc\14.1
               _FwdIt=std::_Vector_iterator<std::_Vector_val<std::_Simple_types<int>>>
           ]
 c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\polygon_operation.h(984): warning C4172: 지역 변수 또는 임시: newP의 주소를 반환하고 있습니다.
-c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(352): warning C4715: 'EVENTS::computeMinSum': 모든 제어 경로에서 값을 반환하지는 않습니다.
+c:\users\spock_the_wizard\romeojuliet\romeoandjuliet\project1\event_computation.h(394): warning C4715: 'EVENTS::computeMinSum': 모든 제어 경로에서 값을 반환하지는 않습니다.
   Project1.vcxproj -> C:\Users\Spock_the_Wizard\RomeoJuliet\RomeoAndJuliet\x64\Debug\Project1.exe

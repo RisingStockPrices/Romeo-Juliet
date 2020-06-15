@@ -10,7 +10,6 @@ bool isVisible(int from, int to);
 Point computeEndpoint(int lineFrom, int lineTo);
 Point foot_of_max_perpendicular(int p, Point origin, Point dest);
 
-
 enum TYPE {
 	tERROR,
 	tPATH,
@@ -25,7 +24,6 @@ protected:
 	double slope;
 	TYPE type;
 	int v;
-	double angle=0;
 	vector<vector<int>> path; //stores path from s or t to the line of sight
 	Point foot[2];
 	int distance[2];
@@ -35,9 +33,6 @@ public:
 	LINE() {
 		path.push_back(vector<int>());
 		path.push_back(vector<int>());
-	}
-	double getAngle() {
-		return angle;
 	}
 	Point* getEndpoints() {
 		return endP;
@@ -132,14 +127,14 @@ class BOUNDARY : public LINE {
 	int boundary_point;
 
 public:
-	BOUNDARY(int _v, int _v2, double _ang) {
+	BOUNDARY(int _v, int _v2) {
 		type = tBOUNDARY;
 		v = _v;
 		boundary_point = _v2;
 		endP[0] = computeEndpoint(v, boundary_point);//point_list[_v2];
 		endP[1] = computeEndpoint(boundary_point, v);
 		slope = computeSlope(point_list[_v], point_list[_v2]);// endP[0], endP[1]);
-		angle = _ang;
+	
 	}
 	
 };
@@ -198,10 +193,7 @@ public:
 			
 		}
 	}
-	void setAngle(double _ang)
-	{
-		angle = _ang;
-	}
+	
 };
 
 

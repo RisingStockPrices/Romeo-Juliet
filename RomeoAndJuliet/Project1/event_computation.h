@@ -7,11 +7,17 @@
 #define INT_MAX 100000000
 using namespace std;
 
+enum ROT {
+	DEFAULT,
+	CW,
+	CCW
+};
 
 class EVENTS {
 	int next_line_id;
 	vector<vector<LINE*>> Queue;
 	vector<int> shortest_path;
+	vector<ROT> rotation; // true for CW, false for CCW
 	SPT* spt[2]; //[0]: spt_s (s as root) , [1]: spt_t (t as root)
 public:
 	EVENTS() {}
@@ -33,17 +39,20 @@ public:
 	vector<vector<LINE*>> getQueue() {
 		return Queue;
 	}
+	void sort_by_slope();
 	void compute_path_events();
 	void compute_boundary_events();
 	void compute_bend_events();
 	double computeMinSum(void);
 };
 
-
-bool compare_angle(LINE* a, LINE* b)
+//sorts from small -> big
+bool compare_slope(LINE* a, LINE* b)
 {
-	return (a->getAngle() < b->getAngle());
+	return (a->getSlope() < b->getSlope());
 }
+
+
 
 /* adds a LOS to the queue vector for every edge in the shortest path (s,t) */
 void EVENTS::compute_path_events()
@@ -55,6 +64,19 @@ void EVENTS::compute_path_events()
 		
 		PATH* line = new PATH(prev, cur);
 		Queue[i].push_back(line);
+	}
+
+	rotation.push_back(DEFAULT);
+	for (int i = 1; i < shortest_path.size() - 1; i++)
+	{
+		double angle = calculate_angle_between(shortest_path[i], shortest_path[i + 1], shortest_path[i - 1], shortest_path[i]);
+		//atan2 결과 양수이면 ccw 음수면 CW 0이면 전 결과 그대로
+		if (angle > 0)
+			rotation.push_back(CCW);
+		else if (angle < 0)
+			rotation.push_back(CW);
+		else
+			rotation.push_back(rotation.back());
 	}
 }
 
@@ -115,25 +137,50 @@ void EVENTS::compute_boundary_events()
 			{
 				if (is_tangent(prev,cur,next, vertex_id))
 				{
-					double angle = 0;
-					if (j >= s_size)
-						angle = calculate_angle_between(cur, vertex_id, cur, prev);
-
-					else
-						angle = calculate_angle_between(cur, vertex_id, prev, cur);
-					angle = abs(normalize_angle(angle));
-					BOUNDARY* boundary = new BOUNDARY(cur, vertex_id,angle);
+					BOUNDARY* boundary = new BOUNDARY(cur, vertex_id);
 					Queue[i - 1].push_back(boundary);
 				}
 			}
 		}
 
-		for (int j = 0; j < Queue[i - 1].size(); j++)
-			sort(Queue[i - 1].begin(), Queue[i - 1].end(), compare_angle);
+		//for (int j = 0; j < Queue[i - 1].size(); j++)
+			//sort(Queue[i - 1].begin(), Queue[i - 1].end(), compare_angle);
 		
 	}
+
+
+	sort_by_slope();
 }
 
+void EVENTS::sort_by_slope()
+{
+	for (int i = 0; i < Queue.size()-1; i++)
+	{
+		double curS = Queue[i].front()->getSlope();
+		double nextS = Queue[i + 1].front()->getSlope();
+
+		sort(Queue[i].begin(), Queue[i].end(), compare_slope); 
+		int idx = 0;
+		for (; idx < Queue[i].size(); idx++)
+		{
+			if (curS == Queue[i][idx]->getSlope())
+				break;
+		}
+		int nxtIdx = Queue[i].size();
+		
+		ROT rot = rotation[i + 1];
+		if (rot == CW) {
+			Queue[i].insert(Queue[i].begin(), Queue[i].begin() + idx + 1, Queue[i].end());
+			Queue[i].erase(Queue[i].begin() + nxtIdx, Queue[i].end());
+			reverse(Queue[i].begin(), Queue[i].end());
+		}
+		else if (rot == CCW)
+		{
+			Queue[i].insert(Queue[i].end(), Queue[i].begin(), Queue[i].begin() + idx);
+			Queue[i].erase(Queue[i].begin(), Queue[i].begin() + idx);
+		}
+	}
+}
 void EVENTS::compute_bend_events()
 {
 	//compute shortest path to line for all (path & boundary) events
@@ -194,8 +241,6 @@ void EVENTS::compute_bend_events()
 						{
 							bool isTangent = is_tangent(shortest_path[i - 1], shortest_path[i], shortest_path[i + 1], point_list.size() - 1);
 							if (isTangent) {
-								double angle = calculate_angle_between(shortest_path[i], point_list.size() - 1, shortest_path[i], shortest_path[i - 1]);
-								bend->setAngle(angle);
 								Queue[i - 1].push_back(bend);
 							}
 						}
@@ -203,8 +248,6 @@ void EVENTS::compute_bend_events()
 						{
 							bool isTangent = is_tangent(shortest_path[i], shortest_path[i + 1], shortest_path[i + 2], point_list.size() - 1);
 							if (isTangent) {
-								double angle = calculate_angle_between(shortest_path[i + 1], point_list.size() - 1, shortest_path[i + 1], shortest_path[i]);
-								bend->setAngle(angle);
 								Queue[i].push_back(bend);// insert(Queue[i].begin() + j, bend);
 							}
 						}
@@ -266,9 +309,7 @@ void EVENTS::compute_bend_events()
 						else {
 
 							bool isTangent = is_tangent(shortest_path[i], shortest_path[i+1], shortest_path[i + 2], point_list.size() - 1);
-							double angle = calculate_angle_between(shortest_path[i + 1], point_list.size()-1, shortest_path[i],shortest_path[i+1]);
-							angle = abs(normalize_angle(angle));
-							bend->setAngle(angle);
+							
 							if (isTangent)
 								Queue[i].push_back(bend);// insert(Queue[i].begin() + j, bend);						
 						}
@@ -288,8 +329,9 @@ void EVENTS::compute_bend_events()
 		}
 	}
 
- 	for (int i = 0; i < Queue.size(); i++)
-		sort(Queue[i].begin(), Queue[i].end(), compare_angle);
+	sort_by_slope();
+ 	//for (int i = 0; i < Queue.size(); i++)
+	//	sort(Queue[i].begin(), Queue[i].end(), compare_angle);
 }
 
 double EVENTS::computeMinSum(void)
