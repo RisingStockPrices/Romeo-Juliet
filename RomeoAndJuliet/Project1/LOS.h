@@ -142,20 +142,6 @@ public:
 class BEND : public LINE {
 	int orthogonalP[2];
 public:
-	BEND(int _v, int boundary_point, SPT* spt_s, SPT* spt_t)
-	{
-		type = tBEND_T1;
-		v = _v;
-		endP[0] = point_list[_v];
-		endP[1] = point_list[boundary_point];
-
-		path[0] = spt_s->retrieve_shortest_path(_v);
-		path[1] = spt_s->retrieve_shortest_path(boundary_point);
-		foot[0] = point_list[_v];
-		foot[1] = point_list[boundary_point];
-
-		slope = computeSlope(endP[0], endP[1]);
-	}
 	BEND(int _v, int orth1, int orth2, int idx)
 	{
 		if (orth1 == _v || orth2 == _v)

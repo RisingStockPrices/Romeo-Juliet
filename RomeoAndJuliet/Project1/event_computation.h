@@ -142,12 +142,7 @@ void EVENTS::compute_boundary_events()
 				}
 			}
 		}
-
-		//for (int j = 0; j < Queue[i - 1].size(); j++)
-			//sort(Queue[i - 1].begin(), Queue[i - 1].end(), compare_angle);
-		
 	}
-
 
 	sort_by_slope();
 }
@@ -181,6 +176,14 @@ void EVENTS::sort_by_slope()
 		}
 	}
 }
+
+bool is_tangent_slope(double slope, double from, double to, ROT direction) {
+	bool inBetween = (direction == CW) == (from > to);
+	if (inBetween)
+		return (from - slope) * (to - slope) < 0;
+	else
+		return (from - slope) * (to - slope) > 0;
+}
 void EVENTS::compute_bend_events()
 {
 	//compute shortest path to line for all (path & boundary) events
@@ -197,6 +200,63 @@ void EVENTS::compute_bend_events()
 		}
 	}
 
+	LINE* prev;
+	int prev_u = -1;
+	int prev__u = -1;
+	int prevu = Queue[0][0]->getPath(0).back();
+	
+	for (int i = 0; i < Queue.size(); i++)
+	{
+		vector<LINE*> BendEvents;
+		for (int j = 0; j < Queue[i].size(); j++)
+		{
+			LINE* cur = Queue[i][j];
+			vector<int> curPath = cur->getPath(0);
+
+			//last vertex on path to line
+			int u = curPath.back();
+			//vertex following u in shortest path
+			vector<int>::iterator it = find(shortest_path.begin(), shortest_path.end(), u);
+			int _u = (it != shortest_path.end() && (it+1)!=shortest_path.end()) ? *(it + 1) : -1;
+			int __u = (curPath.size() > 2) ? curPath[curPath.size() - 2]:-1;
+			
+			//possible bend events
+			if (prevu != u)
+			{
+				//type 2 if u==prev__u
+				//type 1 (ii) if u==prev_u
+				int rot = prev->getV();
+				int prevIdx = (j == 0) ? i - 1 : i;
+				
+				//making sure not type 1 (i) case (since it's already added)
+				if (rotation[prevIdx] == rotation[prevIdx + 1])
+				{
+					BEND* bend = new BEND(rot, u, prevu, 0);
+					if (bend->getType() != tERROR)
+					{
+						//check for tangent
+						bool isTangent = is_tangent_slope(bend->getSlope(), prev->getSlope(), cur->getSlope(), rotation[prevIdx + 1]);
+						if (isTangent)
+						{
+							if (j == 0)
+								Queue[prevIdx].push_back(bend);
+							else
+								BendEvents.push_back(bend);//Queue[prevIdx].push_back(bend);
+						}
+					}
+				}
+				
+			}
+			
+			prevu = u;
+			prev_u = _u;
+			prev__u = __u;
+			prev = cur;
+		}
+		Queue[i].insert(Queue[i].end(),BendEvents.begin(),BendEvents.end());
+	}
+
+	/*
 	//u and _u each correspond to u and u' in the paper (see page 7 - bend events)
 	int u, _u;
 	LINE* prev = Queue[0][0];
@@ -206,6 +266,7 @@ void EVENTS::compute_bend_events()
 	int prev__u = *(it + 1);
 	int prev___u = -1;
 
+	//inspecting shortest paths from S
 	for (int i = 0; i < Queue.size(); i++)
 	{
 		for (int j = 0; j < Queue[i].size(); j++)
@@ -214,20 +275,19 @@ void EVENTS::compute_bend_events()
 			vector<int> path = line->getPath(0);
 			bool isBendEvent = false;
 
+			int rotIdx = distance(shortest_path.begin(), it);
 			it = find(path.begin(), path.end(), prev_u);
 			int orth2 = -1;
 			if (it == path.end())//type 2 (spline vertex deleted)
-			{
 				orth2 = prev___u;
-				isBendEvent = true;
-			}
-			else if ((it + 1) != path.end() && prev__u == path.back())
+			else if ((it + 1) != path.end() && prev__u == path.back()) //type 1 (ii) : a new vertex added in the spline - the vertex should follow u in the sp
 			{
 				orth2 = prev__u;
-				isBendEvent = true;
+				
+				//check rotation vertex's rotation direction see if it mismatches previous in path
 			}
-
-			if (isBendEvent)
+			
+			if (orth2!=-1)
 			{
 				int prev_v = prev->getV();
 				BEND* bend = new BEND(prev_v, prev_u, orth2,0);
@@ -253,6 +313,10 @@ void EVENTS::compute_bend_events()
 						}
 					}
 					point_list.pop_back();
+				}
+				else
+				{
+					printf("wait\n");
 				}
 			}
 
@@ -328,10 +392,8 @@ void EVENTS::compute_bend_events()
 			}
 		}
 	}
-
+	*/
 	sort_by_slope();
- 	//for (int i = 0; i < Queue.size(); i++)
-	//	sort(Queue[i].begin(), Queue[i].end(), compare_angle);
 }
 
 double EVENTS::computeMinSum(void)
