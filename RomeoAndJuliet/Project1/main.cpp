@@ -46,7 +46,7 @@ vector<Point> polygon_boundary;
 
 //global variables for display using openGL functions
 vector<Point> shortest_path;
-vector<Point> shortest_path_to_line;
+vector<Point> shortest_path_to_line[2];
 int firstIdx = 0;
 int secondIdx = 0;
 EVENTS Events;
@@ -805,8 +805,11 @@ void clear_test_points() {
 	selected_triangle = vector<int>();
 	sequence_diagonal = vector<int>();
 	shortest_path = vector<Point>();
-	shortest_path_to_line = vector<Point>();
+	shortest_path_to_line[0] = vector<Point>();
+	shortest_path_to_line[1] = vector<Point>();
 	Events = *(new EVENTS());
+	firstIdx = 0;
+	secondIdx = 0;
 }
 void clear_test_points(unsigned char key, int x, int y) {
 	switch (key) {
@@ -827,14 +830,15 @@ void show_sp_line(int key, int x, int y)
 	switch (key) {
 	case GLUT_KEY_RIGHT:
 		subSize = Queue[firstIdx].size();
-		if (++secondIdx >= subSize)
+		secondIdx++;
+		if (secondIdx >= subSize)
 		{
 			secondIdx = 0;
 			firstIdx++;
 			if (firstIdx >= size)
 				firstIdx = 0;
 		}
-		shortest_path_to_line = Queue[firstIdx][secondIdx]->getShortestPath(0);
+		//printf("%d %d\n", firstIdx, secondIdx);
 		break;
 	case GLUT_KEY_LEFT:
 		if (--secondIdx == -1)
@@ -842,13 +846,16 @@ void show_sp_line(int key, int x, int y)
 			firstIdx = (firstIdx == 0)?size - 1:firstIdx - 1;
 			secondIdx = Queue[firstIdx].size() - 1;
 		}
-		shortest_path_to_line = Queue[firstIdx][secondIdx]->getShortestPath(0);
 		break;
 	case GLUT_KEY_UP:
 		break;
 	case GLUT_KEY_DOWN:
 		break;
 	}
+
+
+	shortest_path_to_line[0] = Queue[firstIdx][secondIdx]->getShortestPath(0);
+	shortest_path_to_line[1] = Queue[firstIdx][secondIdx]->getShortestPath(1);
 	/*
 
 	if (Events.get_queue().empty())
@@ -1085,14 +1092,22 @@ void display() {
 	glEnd();
 	glLineWidth(2);
 	glBegin(GL_LINES);
-	set_color_rgb(178, 102, 255);// 9, 129, 129);//grey
-	for (int i = 0; i < (int)shortest_path_to_line.size() - 1; i++)
+	set_color_rgb(178, 102, 255);
+	for (int i = 0; i < (int)shortest_path_to_line[0].size() - 1; i++)
 	{
-		glVertex2d(shortest_path_to_line[i].get_x(), shortest_path_to_line[i].get_y());
-		glVertex2d(shortest_path_to_line[i + 1].get_x(), shortest_path_to_line[i + 1].get_y());
+		glVertex2d(shortest_path_to_line[0][i].get_x(), shortest_path_to_line[0][i].get_y());
+		glVertex2d(shortest_path_to_line[0][i + 1].get_x(), shortest_path_to_line[0][i + 1].get_y());
 	}
 	glEnd();
-	
+
+	glBegin(GL_LINES);
+	set_color_rgb(102, 204, 255);
+	for (int i = 0; i < (int)shortest_path_to_line[1].size() - 1; i++)
+	{
+		glVertex2d(shortest_path_to_line[1][i].get_x(), shortest_path_to_line[1][i].get_y());
+		glVertex2d(shortest_path_to_line[1][i + 1].get_x(), shortest_path_to_line[1][i + 1].get_y());
+	}
+	glEnd();
 
 	/* Emphasizes the two test points (start and end vertices of the shortest path) */
 	glColor3d(0, 0.47, 0.43);

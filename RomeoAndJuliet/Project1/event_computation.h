@@ -2,7 +2,7 @@
 
 #include<iostream>
 #include<vector>
-
+#include <algorithm>
 #include "LOS.h"
 #define INT_MAX 100000000
 using namespace std;
@@ -154,25 +154,31 @@ void EVENTS::sort_by_slope()
 		double curS = Queue[i].front()->getSlope();
 		double nextS = Queue[i + 1].front()->getSlope();
 
-		sort(Queue[i].begin(), Queue[i].end(), compare_slope); 
-		int idx = 0;
-		for (; idx < Queue[i].size(); idx++)
+		std::sort(Queue[i].begin(), Queue[i].end(), compare_slope);
+		vector<LINE*> newQueue;
+		int curIdx = 0;
+		for (; curIdx < Queue[i].size(); curIdx++)
 		{
-			if (curS == Queue[i][idx]->getSlope())
+			if (curS == Queue[i][curIdx]->getSlope())
 				break;
 		}
 		int nxtIdx = Queue[i].size();
 		
-		ROT rot = rotation[i + 1];
+		ROT rot = rotation[i+1];
+		vector<LINE*>::iterator it = Queue[i].begin() + curIdx + 1;
 		if (rot == CW) {
-			Queue[i].insert(Queue[i].begin(), Queue[i].begin() + idx + 1, Queue[i].end());
-			Queue[i].erase(Queue[i].begin() + nxtIdx, Queue[i].end());
-			reverse(Queue[i].begin(), Queue[i].end());
+			newQueue.insert(newQueue.begin(), it, Queue[i].end());
+			newQueue.insert(newQueue.end(), Queue[i].begin(), it);
+			reverse(newQueue.begin(), newQueue.end());
+			Queue[i] = newQueue;
 		}
 		else if (rot == CCW)
 		{
-			Queue[i].insert(Queue[i].end(), Queue[i].begin(), Queue[i].begin() + idx);
-			Queue[i].erase(Queue[i].begin(), Queue[i].begin() + idx);
+			//newQueue.insert(newQueue.begin(), it-1, Queue[i].end());
+			//newQueue.insert(newQueue.end(), Queue[i].begin(), it);
+			//Queue[i] = newQueue;
+			Queue[i].insert(Queue[i].end(), Queue[i].begin(), Queue[i].begin() + curIdx);
+			Queue[i].erase(Queue[i].begin(), Queue[i].begin() + curIdx);
 		}
 	}
 }
@@ -245,15 +251,61 @@ void EVENTS::compute_bend_events()
 						}
 					}
 				}
-				
 			}
-			
 			prevu = u;
 			prev_u = _u;
 			prev__u = __u;
 			prev = cur;
 		}
 		Queue[i].insert(Queue[i].end(),BendEvents.begin(),BendEvents.end());
+	}
+
+	prevu = Queue.back().back()->getPath(1).back();
+	int s_size = shortest_path.size();
+	for (int i = Queue.size() - 1; i >= 0; i--)
+	{
+		vector<LINE*> BendEvents;
+		for (int j = Queue[i].size() - 1; j >= 0; j--)
+		{
+			LINE* cur = Queue[i][j];
+			if (cur->getType() > tBOUNDARY)
+				continue;
+
+			vector<int> curPath = cur->getPath(1);
+			//last vertex on path to line
+			int u = curPath.back();
+			//vertex following u in shortest path
+			vector<int>::iterator it = find(shortest_path.begin(), shortest_path.end(), u);
+			int _u = (it != shortest_path.end() && it!=shortest_path.begin()) ? *(it - 1) : -1;
+			int __u = (curPath.size() > 2) ? curPath[curPath.size() - 2] : -1;
+
+			//possible bend events
+			if (prevu != u)
+			{
+				//type 2 if u==prev__u
+				//type 1 (ii) if u==prev_u
+				int rot = prev->getV();
+
+				//making sure not type 1 (i) case (since it's already added)
+ 				if (i+3<s_size && rotation[i+1] == rotation[i+ 2])
+				{
+					BEND* bend = new BEND(rot, u, prevu, 0);
+					if (bend->getType() != tERROR)
+					{
+						//check for tangent
+						bool isTangent = is_tangent_slope(bend->getSlope(), prev->getSlope(), cur->getSlope(), (ROT)(3-rotation[i + 1]));
+						if (isTangent)
+							BendEvents.push_back(bend);
+					}
+				}
+			}
+
+			prevu = u;
+			prev_u = _u;
+			prev__u = __u;
+			prev = cur;
+		}
+		Queue[i].insert(Queue[i].end(), BendEvents.begin(), BendEvents.end());
 	}
 
 	/*
