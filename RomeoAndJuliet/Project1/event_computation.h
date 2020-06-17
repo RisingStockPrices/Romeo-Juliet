@@ -206,6 +206,211 @@ void EVENTS::compute_bend_events()
 		}
 	}
 
+	int s_size = shortest_path.size();
+	vector<int> prev = Queue[0][0]->getPath(0), cur, cur_t = Queue[0][0]->getPath(1), prev_t;
+	double slope_prev = Queue[0][0]->getSlope(), slope_cur;
+	for (int i = 0; i < Queue.size(); i++)
+	{
+		vector<LINE*> tempQueue;
+		for (int j = 0; j < Queue[i].size(); j++)
+		{
+			cur = Queue[i][j]->getPath(0);
+			prev_t = Queue[i][j]->getPath(1);
+			slope_cur = Queue[i][j]->getSlope();
+
+			int idx_prev = 0, idx_cur = 0; 
+			while (idx_cur != cur.size() || idx_prev != prev.size())
+			{
+				if (idx_cur!=cur.size() && idx_prev != prev.size() && cur[idx_cur] == prev[idx_prev])
+				{
+					idx_cur++;
+					idx_prev++;
+				}
+				else
+				{
+					BEND* bend;
+					int rot = (j == 0) ? shortest_path[i] : shortest_path[i+1];
+
+					if (idx_cur < cur.size()) {
+						vector<int>::iterator it = find(prev.begin(), prev.end(), cur[idx_cur]);
+						if (it == prev.end()) //type 1 (ii)
+						{
+							bend = new BEND(rot, cur[idx_cur - 1], cur[idx_cur], 0);
+							idx_cur++;
+							if (bend->getType() != tERROR)
+							{
+								if (j == 0) {
+									if (is_tangent_slope(bend->getSlope(), slope_prev, slope_cur, rotation[i]))
+										Queue[i - 1].push_back(bend);
+								}
+								else {
+									if (is_tangent_slope(bend->getSlope(), slope_prev, slope_cur, rotation[i + 1]))
+										tempQueue.push_back(bend);
+								}
+							}
+						}
+					}
+					if (idx_prev < prev.size()) {
+						vector<int>::iterator it = find(cur.begin(), cur.end(), prev[idx_prev]);
+						if (it == cur.end()) //type 2
+						{
+							bend = new BEND(rot, prev[idx_prev - 1], prev[idx_prev], 0);
+							idx_prev++;
+							if (bend->getType() != tERROR)
+							{
+								if (j == 0) {
+									if (is_tangent_slope(bend->getSlope(), slope_prev, slope_cur, rotation[i]))
+										Queue[i - 1].push_back(bend);
+								}
+								else {
+									if (is_tangent_slope(bend->getSlope(), slope_prev, slope_cur, rotation[i + 1]))
+										tempQueue.push_back(bend);
+								}
+							}
+						}
+					}
+					
+				}
+			}
+
+			idx_prev = 0, idx_cur = 0;
+			while (idx_cur != cur_t.size() || idx_prev != prev_t.size())
+			{
+				if (idx_cur != cur_t.size() && idx_prev != prev_t.size() && cur_t[idx_cur] == prev_t[idx_prev])
+				{
+					idx_cur++;
+					idx_prev++;
+				}
+				else
+				{
+					BEND* bend;
+					int rot = (j == 0) ? shortest_path[i] : shortest_path[i + 1];
+
+					if (idx_cur < cur_t.size()) {
+						vector<int>::iterator it = find(prev_t.begin(), prev_t.end(), cur_t[idx_cur]);
+						if (it == prev_t.end()) //type 1 (ii)
+						{
+							bend = new BEND(rot, cur_t[idx_cur - 1], cur_t[idx_cur], 0);
+							idx_cur++;
+							if (bend->getType() != tERROR)
+							{
+								if (j == 0) {
+									if (is_tangent_slope(bend->getSlope(), slope_prev, slope_cur, rotation[i]))
+										Queue[i - 1].push_back(bend);
+								}
+								else {
+									if (is_tangent_slope(bend->getSlope(), slope_prev, slope_cur, rotation[i + 1]))
+										tempQueue.push_back(bend);
+								}
+							}
+						}
+					}
+					if (idx_prev < prev_t.size()) {
+						vector<int>::iterator it = find(cur_t.begin(), cur_t.end(), prev_t[idx_prev]);
+						if (it == cur_t.end()) //type 2
+						{
+							bend = new BEND(rot, prev_t[idx_prev - 1], prev_t[idx_prev], 0);
+							idx_prev++;
+							if (bend->getType() != tERROR)
+							{
+								if (j == 0) {
+									if (is_tangent_slope(bend->getSlope(), slope_prev, slope_cur, rotation[i]))
+										Queue[i - 1].push_back(bend);
+								}
+								else {
+									if (is_tangent_slope(bend->getSlope(), slope_prev, slope_cur, rotation[i + 1]))
+										tempQueue.push_back(bend);
+								}
+							}
+						}
+					}
+
+				}
+			}
+
+			prev = cur;
+			cur_t=prev_t;
+			slope_prev = slope_cur;
+		}
+		Queue[i].insert(Queue[i].end(), tempQueue.begin(), tempQueue.end());
+	}
+
+
+	/*
+	prev = Queue.back().back()->getPath(1);
+	slope_prev = Queue.back().back()->getSlope();
+	int s_size = shortest_path.size();
+	for (int i = Queue.size() - 1; i >= 0; i--)
+	{
+		vector<LINE*> tempQueue;
+		for (int j = Queue[i].size()-1;j>=0;j--)
+		{
+			//make sure you're not checking bend events
+			int idx_prev = 0, idx_cur =0;
+			cur = Queue[i][j]->getPath(1);
+			slope_cur = Queue[i][j]->getSlope();
+			while (idx_cur != cur.size() || idx_prev != prev.size())
+			{
+				if (idx_cur != cur.size() && idx_prev != prev.size() && cur[idx_cur] == prev[idx_prev])
+				{
+					idx_cur++;
+					idx_prev++;
+				}
+				else
+				{
+					BEND* bend;
+					int rot = (j == 0) ? shortest_path[s_size-i] : shortest_path[s_size-i+1];
+					
+					if (idx_cur < cur.size()) {
+						vector<int>::iterator it = find(prev.begin(), prev.end(), cur[idx_cur]);
+						if (it == prev.end()) //type 1 (ii)
+						{
+							bend = new BEND(rot, cur[idx_cur - 1], cur[idx_cur], 0);
+							idx_cur++;
+							
+							if (bend->getType() != tERROR)
+							{
+								if (j == 0) {
+									if (is_tangent_slope(bend->getSlope(), slope_prev, slope_cur, rotation[s_size-1-i]))
+										Queue[i - 1].push_back(bend);
+								}
+								else {
+									if (is_tangent_slope(bend->getSlope(), slope_prev, slope_cur, rotation[s_size-i]))
+										tempQueue.push_back(bend);
+								}
+							}
+						}
+					}
+					if (idx_prev < prev.size()) {
+						vector<int>::iterator it = find(cur.begin(), cur.end(), prev[idx_prev]);
+						if (it == cur.end()) //type 2
+						{
+							bend = new BEND(rot, prev[idx_prev - 1], prev[idx_prev], 0);
+							idx_prev++;
+							if (bend->getType() != tERROR)
+							{
+								if (j == 0) {
+									if (is_tangent_slope(bend->getSlope(), slope_prev, slope_cur, rotation[s_size - 1 - i]))
+										Queue[i - 1].push_back(bend);
+								}
+								else {
+									if (is_tangent_slope(bend->getSlope(), slope_prev, slope_cur, rotation[s_size - i]))
+										tempQueue.push_back(bend);
+								}
+							}
+						}
+					}
+
+				}
+			}
+			prev = cur;
+			slope_prev = slope_cur;
+		}
+		Queue[i].insert(Queue[i].end(), tempQueue.begin(), tempQueue.end());
+	}
+	*/
+
+	/*
 	LINE* prev;
 	int prev_u = -1;
 	int prev__u = -1;
@@ -306,7 +511,7 @@ void EVENTS::compute_bend_events()
 			prev = cur;
 		}
 		Queue[i].insert(Queue[i].end(), BendEvents.begin(), BendEvents.end());
-	}
+	}*/
 
 	/*
 	//u and _u each correspond to u and u' in the paper (see page 7 - bend events)
@@ -445,11 +650,11 @@ void EVENTS::compute_bend_events()
 		}
 	}
 	*/
+
 	sort_by_slope();
 }
 
-double EVENTS::computeMinSum(void)
-{
+double EVENTS::computeMinSum(void) {
 	double candidateSlope[4];
 	double candidateDist[4];
 	LINE* prev = Queue[0][0];
