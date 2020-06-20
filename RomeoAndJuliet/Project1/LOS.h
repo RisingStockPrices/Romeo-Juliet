@@ -12,6 +12,7 @@ Point foot_of_max_perpendicular(int p, Point origin, Point dest);
 
 enum TYPE {
 	tERROR,
+	tDEFAULT,
 	tPATH,
 	tBOUNDARY,
 	tBEND_T1, //case where boundary cases overlap with bend events (type 1 (i))
@@ -27,12 +28,40 @@ protected:
 	vector<vector<int>> path; //stores path from s or t to the line of sight
 	Point foot[2];
 	int distance[2];
-	double candidateSlope[4];
-	double candidateDist[4];
 public:
 	LINE() {
 		path.push_back(vector<int>());
 		path.push_back(vector<int>());
+	}
+	LINE(int _v, double _slope, vector<int> path1, vector<int> path2)
+	{
+		type = tDEFAULT;
+		v = _v;
+		slope = _slope;
+		path[0] = path1, path[1] = path2;
+		//need to get endpoint and
+		//foot calculation too yo
+
+		//may need a better way to compute length from u to line
+	}
+	//returns sum of distances from each _s and _t to the line in question
+	double getDistanceSum(void)
+	{
+		double sum = 0;
+		for (int i = 0; i < path[0].size() - 1; i++)
+		{
+			sum += dist(path[0][i], path[0][i + 1]);
+		}
+		for (int i = 0; i < path[1].size() - 1; i++)
+		{
+			sum += dist(path[1][i], path[1][i + 1]);
+		}
+		point_list.push_back(foot[0]);
+		point_list.push_back(foot[1]);
+		sum += dist(path[0].back(),point_list.size()-2);
+		sum += dist(path[1].back(), point_list.size()-1);
+		point_list.pop_back();
+		point_list.pop_back();
 	}
 	Point* getEndpoints() {
 		return endP;
@@ -312,20 +341,16 @@ bool isVisible(int from, int to)
 {
 	int edge = getFinalEdge(from, from, to);
 	if (edge == -1)
-	{
-		printf("life is a cabaret old chum come to the cabar---et\n");
 		return false;
-	}
+
 	int v1 = diagonal_with_edge_list[edge].get_origin();
 	int v2 = diagonal_with_edge_list[edge].get_dest();
 	//reached polygon boundary
 	Point* p = get_line_intersection(from, to, v1, v2);
-	if (p == NULL) {
-		printf("the moment will come when the world is mine\n");
+	if (p == NULL) 
 		return false;
-	}
+	
 	double px = p->get_x();
-
 	//check if endPoint is equal to TO (loose check)
 	double err = 0.00001;
 	if (abs(point_list[to].get_x()-px)<err)
