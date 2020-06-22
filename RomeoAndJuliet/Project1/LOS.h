@@ -6,6 +6,7 @@
 int line_of_sight_id;
 vector<int> funnel_path_point(vector<int> chain1, vector<int> chain2, Point p);
 pair<vector<int>,Point> funnel_path(vector<int> chain1, vector<int> chain2);
+pair<vector<int>, Point> shortest_path_line(Point p1, Point p2, SPT* spt);
 bool isVisible(int from, int to);
 Point computeEndpoint(int lineFrom, int lineTo);
 Point foot_of_max_perpendicular(int p, Point origin, Point dest);
@@ -38,11 +39,29 @@ public:
 		type = tDEFAULT;
 		v = _v;
 		slope = _slope;
+		path.push_back(vector<int>());
+		path.push_back(vector<int>());
 		path[0] = path1, path[1] = path2;
-		//need to get endpoint and
-		//foot calculation too yo
-
-		//may need a better way to compute length from u to line
+}
+	void computeEndpointWithSlope(void)
+	{
+		//all bend events have to be tangent to V so the while loop shouldn't run forever
+		Point V = point_list[v];
+		while (1)
+		{
+			double slice = 1;
+			Point p1(V.get_x() + slice, V.get_y() + slope * slice);
+			if (point_state.find_triangle(p1) == -1)
+				slice /= 2;
+			else
+			{
+				point_list.push_back(p1);
+				endP[0] = computeEndpoint(point_list.size() - 1, v);
+				endP[1] = computeEndpoint(v, point_list.size() - 1);
+				point_list.pop_back();
+				break;
+			}
+		}
 	}
 	//returns sum of distances from each _s and _t to the line in question
 	double getDistanceSum(void)
@@ -56,12 +75,9 @@ public:
 		{
 			sum += dist(path[1][i], path[1][i + 1]);
 		}
-		point_list.push_back(foot[0]);
-		point_list.push_back(foot[1]);
-		sum += dist(path[0].back(),point_list.size()-2);
-		sum += dist(path[1].back(), point_list.size()-1);
-		point_list.pop_back();
-		point_list.pop_back();
+		
+
+		return sum;
 	}
 	Point* getEndpoints() {
 		return endP;
@@ -137,13 +153,18 @@ class PATH : public LINE {
 	int v2;
 
 public:
-	PATH(int _v2, int _v) {
+	PATH(int _v2, int _v, SPT** spt) {
 		type = tPATH;
 		v = _v;
 		v2 = _v2;
 		endP[0] = computeEndpoint(v, v2);
 		endP[1] = computeEndpoint(v2, v);
 		slope = computeSlope(endP[0], endP[1]);
+		for (int i = 0; i < 2; i++) {
+			pair<vector<int>, Point> res = shortest_path_line(endP[0], endP[1], spt[i]);
+			path[i] = res.first;
+			foot[i] = res.second;
+		}
 	}
 	int getV2()
 	{
@@ -156,14 +177,19 @@ class BOUNDARY : public LINE {
 	int boundary_point;
 
 public:
-	BOUNDARY(int _v, int _v2) {
+	BOUNDARY(int _v, int _v2, SPT** spt) {
 		type = tBOUNDARY;
 		v = _v;
 		boundary_point = _v2;
 		endP[0] = computeEndpoint(v, boundary_point);//point_list[_v2];
 		endP[1] = computeEndpoint(boundary_point, v);
-		slope = computeSlope(point_list[_v], point_list[_v2]);// endP[0], endP[1]);
+		slope = computeSlope(point_list[_v], point_list[_v2]);
 	
+		for (int i = 0; i < 2; i++) {
+			pair<vector<int>, Point> res = shortest_path_line(endP[0], endP[1], spt[i]);
+			path[i] = res.first;
+			foot[i] = res.second;
+		}
 	}
 	
 };
@@ -171,7 +197,7 @@ public:
 class BEND : public LINE {
 	int orthogonalP[2];
 public:
-	BEND(int _v, int orth1, int orth2, int idx)
+	BEND(int _v, int orth1, int orth2, SPT** spt)
 	{
 		if (orth1 == _v || orth2 == _v)
 			type = tERROR;
@@ -191,11 +217,12 @@ public:
 				endP[0] = computeEndpoint(v, point_list.size() - 1);
 				endP[1] = computeEndpoint(point_list.size() - 1, v);
 
-				if (idx == 0 || idx == 1)
+				pair<vector<int>, Point> res;
+				for (int i = 0; i < 2; i++)
 				{
-					path[idx].push_back(orth1);
-					path[idx].push_back(orth2);
-					foot[idx] = _foot;
+					res = shortest_path_line(endP[0], endP[1], spt[i]);
+					path[i] = res.first;
+					foot[i] = res.second;
 				}
 
 				slope = computeSlope(endP[0], endP[1]);
@@ -208,7 +235,6 @@ public:
 			
 		}
 	}
-	
 };
 
 
@@ -415,7 +441,19 @@ vector<int> funnel_path_point(vector<int> chain1, vector<int> chain2, Point p)
 	double first = calculate_angle_between(chain1[0], chain1[1], point_list.size() - 1);
 	double second = calculate_angle_between(chain2[0], chain2[1],point_list.size() - 1);
 	
-	if (first * second <= 0) {
+	if (first * second < 0) {
+		point_list.pop_back();
+		return funnel_path;
+	}
+	else if (first == 0)
+	{
+		funnel_path.push_back(chain1[1]);
+		point_list.pop_back();
+		return funnel_path;
+	}
+	else if (second == 0)
+	{
+		funnel_path.push_back(chain2[1]);
 		point_list.pop_back();
 		return funnel_path;
 	}
@@ -459,12 +497,13 @@ pair<vector<int>,Point> funnel_path(vector<int> chain1, vector<int> chain2)
 
 	double first = calculate_angle_between(chain1[0], chain1[1], point_list.size() - 1);
 	double second = calculate_angle_between(chain2[0], chain2[1], point_list.size() - 1);
-
+	
 	if (first * second < 0 )
 	{
 		point_list.pop_back();
 		return pair<vector<int>,Point>(funnel_path,foot);
 	}
+	
 
 	vector<int>* main_chain;
 	double prev = 0;
@@ -473,7 +512,7 @@ pair<vector<int>,Point> funnel_path(vector<int> chain1, vector<int> chain2)
 		main_chain = &chain1;
 		prev = first;
 	}
-	else
+	else//(abs(first)>abs(second))
 	{
 		main_chain = &chain2;
 		prev = second;
@@ -484,7 +523,7 @@ pair<vector<int>,Point> funnel_path(vector<int> chain1, vector<int> chain2)
 	{
 		double angle = calculate_angle_between((*main_chain)[i], (*main_chain)[i + 1], (*main_chain)[0], point_list.size() - 1);
 		funnel_path.push_back((*main_chain)[i]);
-		if (angle * prev < 0) {
+		if (angle * prev <= 0) {
 			perpendicular = true;
 			break;
 		}

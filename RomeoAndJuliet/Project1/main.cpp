@@ -36,6 +36,7 @@ int d_size;
 Hourglass final_hour;
 
 int test_point_index;
+bool displayAllEvents = false;
 
 
 Hourglass test_hourglass;
@@ -785,7 +786,7 @@ void add_test_point(int button, int state, int x, int y) {
 				events->compute_path_events();
 				events->compute_boundary_events();
 				events->compute_bend_events();
-				events->computeMinSum();
+				events->compute_min_sum();// MinSum();
 				
 				
 				Events = *events;
@@ -805,16 +806,22 @@ void clear_test_points() {
 	shortest_path = vector<Point>();
 	shortest_path_to_line[0] = vector<Point>();
 	shortest_path_to_line[1] = vector<Point>();
+	minSumLine = NULL;
+	displayAllEvents = false;
 	Events = *(new EVENTS());
 	firstIdx = 0;
 	secondIdx = 0;
 }
-void clear_test_points(unsigned char key, int x, int y) {
+void special_keys(unsigned char key, int x, int y) {
 	switch (key) {
 	case ' ':
 		shortest_path = vector<Point>(); 
 		clear_test_points();
 		break;
+	case 'a':
+		displayAllEvents = !displayAllEvents;
+		break;
+
 	}
 	glutPostRedisplay();
 } 
@@ -909,7 +916,7 @@ void print_result(int argc, char **argv) {
 	glutReshapeFunc(reshape);
 	glutDisplayFunc(display);
 	glutMouseFunc(add_test_point);
-	glutKeyboardFunc(clear_test_points);
+	glutKeyboardFunc(special_keys);
 	glutSpecialFunc(show_sp_line);
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
 	glutMainLoop();
@@ -1009,49 +1016,6 @@ void display() {
 	}
 	
 
-
-	/*
-	// Mark the boundary events (path events overlap with the shortest path) 
-	glLineWidth(3);
-	set_color_rgb(207, 99, 10); //green
-	vector<vector<LOS*>> Queue = Events.get_queue();
-	glBegin(GL_LINES);
-	for (int i = 0; i < Queue.size(); i++)
-	{
-		for (int j = 1; j < Queue[i].size(); j++)
-		{
-			glVertex2d(point_list[Queue[i][j]->get_p1()].get_x(), point_list[Queue[i][j]->get_p1()].get_y());
-			glVertex2d(point_list[Queue[i][j]->get_p2()].get_x(), point_list[Queue[i][j]->get_p2()].get_y());
-		}
-	}
-	glEnd();
-	*/
-
-	/*
-	// Mark the extensions of the boundary events 
-	//set_color_rgb(242, 200, 228); //green
-	glBegin(GL_LINES);
-	for (int i = 0; i < Queue.size(); i++)
-	{
-		for (int j = 1; j < Queue[i].size(); j++)
-		{
-			glVertex2d(point_list[Queue[i][j]->get_p1()].get_x(), point_list[Queue[i][j]->get_p1()].get_y());
-			glVertex2d((Queue[i][j]->get_endpoint(false)).get_x(), (Queue[i][j]->get_endpoint(false)).get_y());
-		}
-	}
-	glEnd();
-	
-	// Mark the extensions of the path events 
-	set_color_rgb(255, 192, 203); //green
-	glBegin(GL_LINES);
-	for (int i = 0; i < Queue.size(); i++)
-	{
-		glVertex2d(Queue[i][0]->get_endpoint(true).get_x(), Queue[i][0]->get_endpoint(true).get_y());
-		glVertex2d((Queue[i][0]->get_endpoint(false)).get_x(), (Queue[i][0]->get_endpoint(false)).get_y());
-		
-	}
-	glEnd();
-	*/
 	/* Draws the shortest path computed using the shortest path tree */
 	set_color_rgb(43, 117, 90);
 	glLineWidth(4);
@@ -1064,48 +1028,94 @@ void display() {
 	glEnd();
 
 	/* Testing out the shortest path to line algorithm */
-	glLineWidth(3);
-	glBegin(GL_LINES);
-	if (!Events.getQueue().empty()) {
-		LINE* line = Events.getQueue()[firstIdx][secondIdx];
-		switch (line->getType())
-		{
-		case tPATH:
-			set_color_rgb(255, 103, 191);//pretty pink
-			break;
-		case tBOUNDARY:
-			set_color_rgb(84,231,41);//green
-			break;
-		case tBEND:
-			set_color_rgb(231,58, 41);//red
-			break;
-		default:
-			set_color_rgb(129,129,129);//grey
-			break;
+	if (!displayAllEvents) {
+		glLineWidth(3);
+		glBegin(GL_LINES);
+		if (!Events.getQueue().empty()) {
+			LINE* line = Events.getQueue()[firstIdx][secondIdx];
+			switch (line->getType())
+			{
+			case tPATH:
+				set_color_rgb(8, 169, 236);// 
+				break;
+			case tBOUNDARY:
+				set_color_rgb(84, 231, 41);//green
+				break;
+			case tBEND:
+				set_color_rgb(231, 58, 41);//red
+				break;
+			default:
+				set_color_rgb(129, 129, 129);//grey
+				break;
+			}
+			Point* points = line->getEndpoints();
+			glVertex2d(points[0].get_x(), points[0].get_y());
+			glVertex2d(points[1].get_x(), points[1].get_y());
 		}
-		Point* points = line->getEndpoints();
-		glVertex2d(points[0].get_x(), points[0].get_y());
-		glVertex2d(points[1].get_x(), points[1].get_y());
-	}
-	glEnd();
-	glLineWidth(2);
-	glBegin(GL_LINES);
-	set_color_rgb(178, 102, 255);
-	for (int i = 0; i < (int)shortest_path_to_line[0].size() - 1; i++)
-	{
-		glVertex2d(shortest_path_to_line[0][i].get_x(), shortest_path_to_line[0][i].get_y());
-		glVertex2d(shortest_path_to_line[0][i + 1].get_x(), shortest_path_to_line[0][i + 1].get_y());
-	}
-	glEnd();
+		glEnd();
+		glLineWidth(2);
+		glBegin(GL_LINES);
+		set_color_rgb(178, 102, 255);
+		for (int i = 0; i < (int)shortest_path_to_line[0].size() - 1; i++)
+		{
+			glVertex2d(shortest_path_to_line[0][i].get_x(), shortest_path_to_line[0][i].get_y());
+			glVertex2d(shortest_path_to_line[0][i + 1].get_x(), shortest_path_to_line[0][i + 1].get_y());
+		}
+		glEnd();
 
-	glBegin(GL_LINES);
-	set_color_rgb(102, 204, 255);
-	for (int i = 0; i < (int)shortest_path_to_line[1].size() - 1; i++)
-	{
-		glVertex2d(shortest_path_to_line[1][i].get_x(), shortest_path_to_line[1][i].get_y());
-		glVertex2d(shortest_path_to_line[1][i + 1].get_x(), shortest_path_to_line[1][i + 1].get_y());
+		glBegin(GL_LINES);
+		set_color_rgb(255, 103, 191);//pretty pink
+		//(102, 204, 255);
+		for (int i = 0; i < (int)shortest_path_to_line[1].size() - 1; i++)
+		{
+			glVertex2d(shortest_path_to_line[1][i].get_x(), shortest_path_to_line[1][i].get_y());
+			glVertex2d(shortest_path_to_line[1][i + 1].get_x(), shortest_path_to_line[1][i + 1].get_y());
+		}
+		glEnd();
 	}
-	glEnd();
+	else //display all events at once
+	{
+		glLineWidth(3);
+		vector<vector<LINE*>> q = Events.getQueue();
+		for (int i = 0; i < q.size(); i++)
+		{
+			for (int j = 0; j < q[i].size(); j++)
+			{
+				LINE* evnt = q[i][j];
+				switch (evnt->getType())
+				{
+				case tPATH:
+					set_color_rgb(8, 169, 236);
+					break;
+				case tBOUNDARY:
+					set_color_rgb(84, 231, 41);//green
+					break;
+				case tBEND:
+					set_color_rgb(231, 58, 41);//red
+					break;
+				default:
+					set_color_rgb(129, 129, 129);//grey
+					break;
+				}
+				glBegin(GL_LINES);
+				Point* endP = evnt->getEndpoints();
+				glVertex2d(endP[0].get_x(), endP[0].get_y());
+				glVertex2d(endP[1].get_x(), endP[1].get_y());
+				glEnd();
+			}
+		}
+	}
+
+	//shows result for minSum
+	if (minSumLine != NULL) {
+		glBegin(GL_LINES);
+		set_color_rgb(0, 0, 0);
+		Point* EndP = minSumLine->getEndpoints();
+		Point p1 = EndP[0], p2 = EndP[1];
+		glVertex2d(p1.get_x(), p1.get_y());
+		glVertex2d(p2.get_x(), p2.get_y());
+		glEnd();
+	}
 
 	/* Emphasizes the two test points (start and end vertices of the shortest path) */
 	glColor3d(0, 0.47, 0.43);
