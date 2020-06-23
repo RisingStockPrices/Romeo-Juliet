@@ -160,11 +160,20 @@ public:
 		endP[0] = computeEndpoint(v, v2);
 		endP[1] = computeEndpoint(v2, v);
 		slope = computeSlope(endP[0], endP[1]);
+		
+		for (int i = 0; i < 2; i++) {
+			pair<vector<int>, Point> res = shortest_path_line(endP[i], point_list[(i==0)?v2:v], spt[i]);
+			path[i] = res.first;
+			foot[i] = res.second;
+		}
+
+	
+		/*
 		for (int i = 0; i < 2; i++) {
 			pair<vector<int>, Point> res = shortest_path_line(endP[0], endP[1], spt[i]);
 			path[i] = res.first;
 			foot[i] = res.second;
-		}
+		}*/
 	}
 	int getV2()
 	{
@@ -177,7 +186,7 @@ class BOUNDARY : public LINE {
 	int boundary_point;
 
 public:
-	BOUNDARY(int _v, int _v2, SPT** spt) {
+	BOUNDARY(int _v, int _v2, SPT** spt,bool is_s) {
 		type = tBOUNDARY;
 		v = _v;
 		boundary_point = _v2;
@@ -186,7 +195,7 @@ public:
 		slope = computeSlope(point_list[_v], point_list[_v2]);
 	
 		for (int i = 0; i < 2; i++) {
-			pair<vector<int>, Point> res = shortest_path_line(endP[0], endP[1], spt[i]);
+			pair<vector<int>, Point> res = shortest_path_line(endP[(is_s)?1-i:i], point_list[v], spt[i]);// shortest_path_line(endP[0], endP[1], spt[i]);
 			path[i] = res.first;
 			foot[i] = res.second;
 		}
