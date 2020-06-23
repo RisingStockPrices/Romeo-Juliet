@@ -42,7 +42,7 @@ public:
 		path.push_back(vector<int>());
 		path.push_back(vector<int>());
 		path[0] = path1, path[1] = path2;
-}
+	}
 	void computeEndpointWithSlope(void)
 	{
 		//all bend events have to be tangent to V so the while loop shouldn't run forever
@@ -197,7 +197,7 @@ public:
 class BEND : public LINE {
 	int orthogonalP[2];
 public:
-	BEND(int _v, int orth1, int orth2, SPT** spt)
+	BEND(int _v, int orth1, int orth2, SPT** spt, int idx)
 	{
 		if (orth1 == _v || orth2 == _v)
 			type = tERROR;
@@ -225,6 +225,11 @@ public:
 					foot[i] = res.second;
 				}
 
+				
+				//checking for both orthogonal points
+				if (path[idx].back() != orth2)
+					path[idx].push_back(orth2);
+				
 				slope = computeSlope(endP[0], endP[1]);
 			}
 			else
@@ -235,6 +240,7 @@ public:
 			
 		}
 	}
+
 };
 
 
@@ -498,6 +504,7 @@ pair<vector<int>,Point> funnel_path(vector<int> chain1, vector<int> chain2)
 	double first = calculate_angle_between(chain1[0], chain1[1], point_list.size() - 1);
 	double second = calculate_angle_between(chain2[0], chain2[1], point_list.size() - 1);
 	
+	//there may be precision problems here
 	if (first * second < 0 )
 	{
 		point_list.pop_back();
