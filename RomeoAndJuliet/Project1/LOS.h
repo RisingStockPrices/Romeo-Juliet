@@ -16,8 +16,8 @@ enum TYPE {
 	tDEFAULT,
 	tPATH,
 	tBOUNDARY,
-	tBEND_T1, //case where boundary cases overlap with bend events (type 1 (i))
-	tBEND
+	tBEND_add, //case where boundary cases overlap with bend events (type 1 (i))
+	tBEND_del
 };
 
 class LINE {
@@ -28,7 +28,7 @@ protected:
 	int v;
 	vector<vector<int>> path; //stores path from s or t to the line of sight
 	Point foot[2];
-	int distance[2];
+	double length=0;
 public:
 	LINE() {
 		path.push_back(vector<int>());
@@ -42,6 +42,9 @@ public:
 		path.push_back(vector<int>());
 		path.push_back(vector<int>());
 		path[0] = path1, path[1] = path2;
+	}
+	double getLength() {
+		return length;
 	}
 	void computeEndpointWithSlope(void)
 	{
@@ -104,15 +107,6 @@ public:
 		{
 			path[idx] = res.first;
 			foot[idx] = res.second;
-
-			distance[idx] = 0;
-			/*for (int i = 0; i < path[idx].size()-1; i++)
-			{
-				distance[idx] += dist(path[idx][i], path[idx][i + 1]);
-			}*/
-			point_list.push_back(foot[idx]);
-			distance[idx] += dist(path[idx].back(), point_list.size() - 1);
-			point_list.pop_back();
 		}
 	}
 	vector<int> getPath(int idx)
@@ -165,6 +159,11 @@ public:
 			pair<vector<int>, Point> res = shortest_path_line(endP[i], point_list[(i==0)?v2:v], spt[i]);
 			path[i] = res.first;
 			foot[i] = res.second;
+			for (int j = 0; j < path[i].size()-1; j++)
+				length += dist(path[i][j], path[i][j + 1]);
+			point_list.push_back(foot[i]);
+			length += dist(point_list.size() - 1, path[i].back());
+			point_list.pop_back();
 		}
 
 	
@@ -198,6 +197,11 @@ public:
 			pair<vector<int>, Point> res = shortest_path_line(endP[(is_s)?1-i:i], point_list[v], spt[i]);// shortest_path_line(endP[0], endP[1], spt[i]);
 			path[i] = res.first;
 			foot[i] = res.second;
+			for (int j = 0; j < path[i].size() - 1; j++)
+				length += dist(path[i][j], path[i][j + 1]);
+			point_list.push_back(foot[i]);
+			length += dist(point_list.size() - 1, path[i].back());
+			point_list.pop_back();
 		}
 	}
 	
@@ -206,7 +210,7 @@ public:
 class BEND : public LINE {
 	int orthogonalP[2];
 public:
-	BEND(int _v, int orth1, int orth2, SPT** spt, int idx)
+	BEND(int _v, int orth1, int orth2, SPT** spt, int idx, bool type1)
 	{
 		if (orth1 == _v || orth2 == _v)
 			type = tERROR;
@@ -221,7 +225,7 @@ public:
 				orthogonalP[0] = orth1;
 				orthogonalP[1] = orth2;
 				v = _v;
-				type = tBEND;
+				type = (type1)? tBEND_add:tBEND_del;
 
 				endP[0] = computeEndpoint(v, point_list.size() - 1);
 				endP[1] = computeEndpoint(point_list.size() - 1, v);
@@ -233,12 +237,18 @@ public:
 					path[i] = res.first;
 					foot[i] = res.second;
 				}
-
-				
 				//checking for both orthogonal points
 				if (path[idx].back() != orth2)
 					path[idx].push_back(orth2);
 				
+				for (int i = 0; i < 2; i++)
+				{
+					for (int j = 0; j < path[i].size() - 1; j++)
+						length += dist(path[i][j], path[i][j + 1]);
+					point_list.push_back(foot[i]);
+					length += dist(point_list.size() - 1, path[i].back());
+					point_list.pop_back();
+				}
 				slope = computeSlope(endP[0], endP[1]);
 			}
 			else

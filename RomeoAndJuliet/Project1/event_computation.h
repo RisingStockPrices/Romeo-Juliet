@@ -222,7 +222,7 @@ void EVENTS::compute_bend_events()
 						vector<int>::iterator it = find(prev.begin(), prev.end(), cur[idx_cur]);
 						if (it == prev.end()) //type 1 (ii)
 						{
-							BEND* bend = new BEND(rot, cur[idx_cur - 1], cur[idx_cur], spt,0);
+							BEND* bend = new BEND(rot, cur[idx_cur - 1], cur[idx_cur], spt,0,true);
 							idx_cur++;
 							if (bend->getType() != tERROR && is_tangent_slope(bend->getSlope(),slope_prev,slope_cur,rotation[idx]))
 							{
@@ -237,7 +237,7 @@ void EVENTS::compute_bend_events()
 						vector<int>::iterator it = find(cur.begin(), cur.end(), prev[idx_prev]);
 						if (it == cur.end()) //type 2
 						{
-							BEND* bend = new BEND(rot, prev[idx_prev - 1], prev[idx_prev], spt,0);
+							BEND* bend = new BEND(rot, prev[idx_prev - 1], prev[idx_prev], spt,0,false);
 							idx_prev++;
 							if (bend->getType() != tERROR && is_tangent_slope(bend->getSlope(),slope_prev,slope_cur,rotation[idx]))
 							{
@@ -263,7 +263,7 @@ void EVENTS::compute_bend_events()
 						vector<int>::iterator it = find(prev_t.begin(), prev_t.end(), cur_t[idx_cur]);
 						if (it == prev_t.end()) //type 1 (ii)
 						{
-							BEND* bend = new BEND(rot, cur_t[idx_cur - 1], cur_t[idx_cur], spt,1);
+							BEND* bend = new BEND(rot, cur_t[idx_cur - 1], cur_t[idx_cur], spt,1,false);
 							idx_cur++;
 							if (bend->getType() != tERROR && is_tangent_slope(bend->getSlope(), slope_prev, slope_cur, rotation[idx]))
 							{
@@ -278,7 +278,7 @@ void EVENTS::compute_bend_events()
 						vector<int>::iterator it = find(cur_t.begin(), cur_t.end(), prev_t[idx_prev]);
 						if (it == cur_t.end()) //type 2
 						{
-							BEND* bend = new BEND(rot, prev_t[idx_prev - 1], prev_t[idx_prev], spt,1);
+							BEND* bend = new BEND(rot, prev_t[idx_prev - 1], prev_t[idx_prev], spt,1,true);
 							idx_prev++;
 							if (bend->getType() != tERROR && is_tangent_slope(bend->getSlope(), slope_prev, slope_cur, rotation[idx]))
 							{
@@ -379,71 +379,180 @@ double getSlopeMinSum(double bound1,double bound2, ROT dir, int v, int u, int u_
 	*sum = minSumDist;
 	return minSlope;
 }
+
+double getSlopeMinSum(LINE* prev, LINE* cur, ROT dir, int u, int u_, int v, double* sum)
+{
+	double bound1 = prev->getSlope();
+	double bound2 = cur->getSlope();
+	//case (i) : boundaries
+	double minDist = min(prev->getLength(),cur->getLength());
+	double minSlope = (minDist == bound1) ? bound1 : bound2;
+
+	Point U = point_list[u];
+	Point U_ = point_list[u_];
+	Point V = point_list[v];
+	double c1 = U.get_x() - V.get_x();
+	double c2 = V.get_y() - U.get_y();
+	double c_1 = U_.get_x() - V.get_x();
+	double c_2 = V.get_y() - U_.get_y();
+
+	//case (ii) : absolute value boundaries
+	for (int i = 0; i < 2; i++)
+	{
+		double tempSlope = (i == 0) ? (-c2 / c1) : (-c_2 / c_1);
+		if (is_tangent_slope(tempSlope, bound1, bound2, dir))
+		{
+			double distance = dist(tempSlope, u, v) + dist(tempSlope, u_, v);
+			if (minDist > distance)
+				minSlope = tempSlope, minDist = distance;
+		}
+	}
+
+	//case (iii) local optimum/minimum candidates
+	double tempSlope = (c1 + c_1) / (c2 + c_2);
+	if (is_tangent_slope(tempSlope, bound1, bound2, dir) && (c1 * tempSlope + c2) * (c_1 * tempSlope + c_2) > 0)
+	{
+		double distance = dist(tempSlope, u, v) + dist(tempSlope, u_, v);
+		if (minDist > distance)
+		{
+			minSlope = tempSlope;
+			minDist = distance;
+		}
+	}
+	tempSlope = (c1 - c_1) / (c2 - c_2);
+	if (is_tangent_slope(tempSlope, bound1, bound2, dir) && (c1 * tempSlope + c2) * (c_1 * tempSlope + c_2) < 0)
+	{
+		double distance = dist(tempSlope, u, v) + dist(tempSlope, u_, v);
+		if (minDist > distance)
+		{
+			minSlope = tempSlope;
+			minDist = distance;
+		}
+	}
+
+	*sum = minDist;
+	return minSlope;
+}
 void EVENTS::compute_min_sum(void)
 {
-	int prev_u=-1, prev_u_=-1;
-	bool was_bend = false;
-	double candidate;
-	double startSlope = Queue[0][0]->getSlope() , minSum = std::numeric_limits<double>::infinity();;
+	LINE* start=Queue[0][0], * end=Queue[0][0],*prev = Queue[0][0];
+	LINE* cur=Queue[0][0], * next;
+	int u=-1, u_=-1, v=-1;
+	int prev_u=cur->getPath(0).back(), prev_u_=cur->getPath(1).back(), prev_v=cur->getV();
+	double minSum = std::numeric_limits<double>::infinity();
+	
 	for (int i = 0; i < Queue.size(); i++)
 	{
 		for (int j = 0; j < Queue[i].size(); j++)
 		{
-			LINE* event = Queue[i][j];
-			int cur_u = event->getPath(0).back();
-			int cur_u_ = event->getPath(1).back();
-			int idx = (j == 0) ? i : i + 1;
-			if (prev_u != -1 && prev_u_ != -1)
+			next = Queue[i][j];
+
+			// compute u, u_, v
+			v = cur->getV();
+			u = cur->getPath(0).back();
+			u_ = cur->getPath(1).back();
+			if (cur->getType() == tBEND_del || cur->getPath(0).size() == prev->getPath(0).size()-1 || cur->getPath(1).size() == prev->getPath(1).size()-1)
 			{
-				int u = (was_bend && cur_u != prev_u) ? cur_u : prev_u;
-				int u_ = (was_bend && cur_u_ != prev_u_) ? cur_u_ : prev_u_;
-				double candidateSlope = getSlopeMinSum(startSlope, event->getSlope(), rotation[idx], shortest_path[idx], u, u_, &candidate);
-				LINE* temp = new LINE(shortest_path[idx],candidateSlope, event->getPath(0), event->getPath(1));
-				candidate += temp->getDistanceSum();
-				if (candidate < minSum) {
-					minSum = candidate;
-					minSumLine = temp;
-				}
+				u = next->getPath(0).back(), u_ = next->getPath(1).back();
 			}
-			/*
-				int v = (j!=0)? event->getV():shortest_path[i];
-				if (prev_u != -1 && prev_u_ != -1) {
-					double uuu = (was_bend && cur_u != prev_u) ? cur_u : prev_u;
-					double u_u_ = (was_bend && cur_u_ != prev_u_) ? cur_u_ : prev_u_;
-					double candidateSlope = getSlopeMinSum(startSlope, event->getSlope(), rotation[i + 1], v, uuu, u_u_, &candidate);
-					LINE* temp = new LINE(v, candidateSlope, event->getPath(0), event->getPath(1));
 
-					//compute sum distance for the candidate slope
-					candidate += temp->getDistanceSum();
-					if (candidate < minSum) {
-						minSum = candidate;
-						minSumLine = temp;
-					}
-				}*/
-			
-			was_bend = (event->getType() == tBEND);
-			prev_u = cur_u, prev_u_ = cur_u_;
-			startSlope = event->getSlope();
-
-			/*
-			//structure of shortest paths changed
-			if (u != temp_u || u_ != temp_u_)
+			if (prev_u != u || prev_u_ != u_ || prev_v != v)
 			{
-				if (i != 0 && j != 0) {
-					int v = event->getV();
-					double candidateSlope = getSlopeMinSum(startSlope, event->getSlope(), rotation[v], v, u, u_);
-					LINE* minSumLine = new LINE(v, candidateSlope, event->getPath(0), event->getPath(1));
-
-					//compute sum distance for the candidate slope
-					double candidate = minSumLine->getDistanceSum();
-					if (candidate < minSum)
-						minSum = candidate;
+				//compute for start ~end
+				double sum;
+				int idx = (j == 0) ? i : i+1;
+				double slope = getSlopeMinSum(start, end, rotation[idx], prev_v, prev_u, prev_u_, &sum);
+				LINE* reference = (start->getType() == tBEND_del) ? end : start;
+				LINE* temp = new LINE(prev_v, slope, reference->getPath(0), reference->getPath(1)); //need to adjust this later for bend_del cases
+				sum += temp->getDistanceSum();
+				if (sum < minSum) {
+					minSum = sum; minSumLine = temp;
 				}
-				u = temp_u, u_ = temp_u_;
-				startSlope = event->getSlope();
-			}*/
+
+				start = cur, end = next;
+				prev_u = u, prev_u_ = u_, prev_v = v;
+			}
+			else
+			{
+				end = next;
+			}
+			cur = next;
+			prev = cur;
 		}
 	}
+
+	//LINE* prev = Queue[0][0], *cur = Queue[0][0];
+	//LINE* literal_prev = prev;
+	//int cur_u, cur_u_, cur_v;
+	//int prev_u = prev->getPath(0).back(), prev_u_ = prev->getPath(1).back(), prev_v = prev->getV();
+	/*
+	bool was_bend = false, isType1 = false;
+	double candidate;
+	double startSlope = Queue[0][0]->getSlope() , minSum = std::numeric_limits<double>::infinity();
+	
+	LINE* next,*start=Queue[0][0],*cur = Queue[0][0];
+
+	int start_u = start->getPath(0).back(), start_v = start->getV(), start_u_ = start->getPath(1).back();
+
+	for (int i = 0; i < Queue.size(); i++)
+	{
+		for (int j = 0; j < Queue[i].size(); j++)
+		{
+			int next_i = (j == Queue[i].size() - 1) ? i + 1 : i;
+			int next_j = (j == Queue[i].size() - 1) ? 0 : j + 1;
+			int idx = (j == 0) ? i : i + 1;
+			next = Queue[next_i][next_j];
+			int next_u = next->getPath(0).back();
+			int next_u_ = next->getPath(1).back();
+			int next_v = next->getV();
+
+			int v = (next_j == 0) ? start_v : next_v;
+			if (next_u != start_u || next_u_ != start_u_ || v != start_v)
+			{
+				int u, u_, v;
+				double candidateSlope = getSlopeMinSum(start, cur, rotation[idx], start_u, start_u_, start_v, &candidate);
+				LINE* temp = new LINE(shortest_path[idx], candidateSlope,cur->getPath(0), cur->getPath(1));
+				candidate += temp->getDistanceSum();
+				if (candidate < minSum)
+					minSum = candidate, minSumLine = temp;
+				start = cur;
+				start_u = next_u;
+				start_v = (cur->getType()==tPATH)?start_v:next_v;
+				start_u_ = next_u_;
+			}
+
+			cur = next;
+		}
+	}
+	for (int i = 0; i < Queue.size(); i++)
+	{
+		for (int j = 0; j < Queue[i].size(); j++)
+		{
+			cur = Queue[i][j];
+			cur_u = cur->getPath(0).back();
+			cur_u_ = cur->getPath(1).back();
+			cur_v = cur->getV();
+			int idx = (j == 0) ? i : i + 1;
+			if (cur_v == prev_v && cur_u == prev_u && cur_u_ == prev_u_) {
+				literal_prev = cur;
+				continue;
+			}
+			else {
+				int u = prev_u;
+				int u_ = prev_u_;
+				int v = prev_v;//shortest_path[idx];
+				double candidateSlope = getSlopeMinSum(prev,literal_prev, rotation[idx], u, u_, v,&candidate);
+				LINE* temp = new LINE(shortest_path[idx], candidateSlope, cur->getPath(0), cur->getPath(1));
+				candidate += temp->getDistanceSum();
+				if (candidate < minSum)
+					minSum = candidate, minSumLine = temp;
+				prev = cur;
+				prev_u = cur_u, prev_u_ = cur_u_, prev_v = cur_v;
+				literal_prev = cur;
+			}
+		}
+	}*/
+
 
 	minSumLine->computeEndpointWithSlope();
 	printf("stop here");

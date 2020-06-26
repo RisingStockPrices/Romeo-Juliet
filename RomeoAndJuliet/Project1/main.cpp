@@ -1041,7 +1041,7 @@ void display() {
 			case tBOUNDARY:
 				set_color_rgb(84, 231, 41);//green
 				break;
-			case tBEND:
+			case tBEND_add || tBEND_del:
 				set_color_rgb(231, 58, 41);//red
 				break;
 			default:
@@ -1090,7 +1090,7 @@ void display() {
 				case tBOUNDARY:
 					set_color_rgb(84, 231, 41);//green
 					break;
-				case tBEND:
+				case tBEND_add || tBEND_del:
 					set_color_rgb(231, 58, 41);//red
 					break;
 				default:
