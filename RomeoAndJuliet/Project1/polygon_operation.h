@@ -36,6 +36,11 @@ point_type dist(int p1, int p2) {
 	return sqrt(pow(diff_x, 2) + pow(diff_y, 2));
 }
 
+point_type dist(Point p1, Point p2) {
+	point_type diff_x = (p1.get_x() - p2.get_x());
+	point_type diff_y = (p1.get_y() - p2.get_y());
+	return sqrt(pow(diff_x, 2) + pow(diff_y, 2));
+}
 double calculate_angle(int origin, int target) { //target-origin vector가 x축과 이루는 각을 알려주는 것 가타요....
 	point_type x = point_list[target].get_x() - point_list[origin].get_x();
 	point_type y = point_list[target].get_y() - point_list[origin].get_y();

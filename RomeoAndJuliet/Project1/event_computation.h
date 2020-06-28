@@ -8,11 +8,7 @@
 using namespace std;
 
 LINE* minSumLine;
-enum ROT {
-	DEFAULT,
-	CW,
-	CCW
-};
+
 
 class EVENTS {
 	int next_line_id;
@@ -185,16 +181,8 @@ void EVENTS::sort_by_slope()
 	}
 }
 
-bool is_tangent_slope(double slope, double from, double to, ROT direction) {
-	
-	if (slope == from || slope == to)
-		return false;
-	bool inBetween = (direction == CW) == (from > to);
-	if (inBetween)
-		return (from - slope) * (to - slope) < 0;
-	else
-		return (from - slope) * (to - slope) > 0;
-}
+
+
 void EVENTS::compute_bend_events()
 {
 	int s_size = shortest_path.size();
@@ -222,6 +210,14 @@ void EVENTS::compute_bend_events()
 						vector<int>::iterator it = find(prev.begin(), prev.end(), cur[idx_cur]);
 						if (it == prev.end()) //type 1 (ii)
 						{
+							BEND* bend = new BEND(rot, cur[idx_cur - 1], cur[idx_cur], slope_prev, slope_cur, rotation[idx]);
+							idx_cur++;
+
+							if (j == 0)
+								Queue[i - 1].push_back(bend);
+							else
+								tempQueue.push_back(bend);
+							/*
 							BEND* bend = new BEND(rot, cur[idx_cur - 1], cur[idx_cur], spt,0,true);
 							idx_cur++;
 							if (bend->getType() != tERROR && is_tangent_slope(bend->getSlope(),slope_prev,slope_cur,rotation[idx]))
@@ -230,13 +226,20 @@ void EVENTS::compute_bend_events()
 									Queue[i - 1].push_back(bend);
 								else
 									tempQueue.push_back(bend);
-							}
+							}*/
 						}
 					}
 					if (idx_prev < prev.size()) {
 						vector<int>::iterator it = find(cur.begin(), cur.end(), prev[idx_prev]);
 						if (it == cur.end()) //type 2
 						{
+							BEND* bend = new BEND(rot, prev[idx_prev - 1], prev[idx_prev], slope_prev, slope_cur, rotation[idx]);
+							idx_prev++;
+							if (j == 0)
+								Queue[i - 1].push_back(bend);
+							else
+								tempQueue.push_back(bend);
+							/*
 							BEND* bend = new BEND(rot, prev[idx_prev - 1], prev[idx_prev], spt,0,false);
 							idx_prev++;
 							if (bend->getType() != tERROR && is_tangent_slope(bend->getSlope(),slope_prev,slope_cur,rotation[idx]))
@@ -245,7 +248,7 @@ void EVENTS::compute_bend_events()
 									Queue[i - 1].push_back(bend);
 								else
 									tempQueue.push_back(bend);
-							}
+							}*/
 						}
 					}
 
@@ -437,7 +440,7 @@ void EVENTS::compute_min_sum(void)
 {
 	LINE* start=Queue[0][0], * end=Queue[0][0],*prev = Queue[0][0];
 	LINE* cur=Queue[0][0], * next;
-	int u=-1, u_=-1, v=-1;
+	int u=-1, u_=-1, v=-1, idx;
 	int prev_u=cur->getPath(0).back(), prev_u_=cur->getPath(1).back(), prev_v=cur->getV();
 	double minSum = std::numeric_limits<double>::infinity();
 	
@@ -446,7 +449,7 @@ void EVENTS::compute_min_sum(void)
 		for (int j = 0; j < Queue[i].size(); j++)
 		{
 			next = Queue[i][j];
-
+			idx = (j == 0) ? i : i + 1;
 			// compute u, u_, v
 			v = cur->getV();
 			u = cur->getPath(0).back();
@@ -460,7 +463,6 @@ void EVENTS::compute_min_sum(void)
 			{
 				//compute for start ~end
 				double sum;
-				int idx = (j == 0) ? i : i+1;
 				double slope = getSlopeMinSum(start, end, rotation[idx], prev_v, prev_u, prev_u_, &sum);
 				LINE* reference = (start->getType() == tBEND_del) ? end : start;
 				LINE* temp = new LINE(prev_v, slope, reference->getPath(0), reference->getPath(1)); //need to adjust this later for bend_del cases
@@ -479,6 +481,18 @@ void EVENTS::compute_min_sum(void)
 			cur = next;
 			prev = cur;
 		}
+	}
+	//don't forget the final case [ CUR should be the last path event ]
+	v = cur->getV(), u = cur->getPath(0).back(), u_ = cur->getPath(1).back();
+	if (prev_u != u || prev_u_ != u_ || prev_v != v)
+	{
+		double sum;
+		double slope = getSlopeMinSum(start, end, rotation[Queue.size() - 1], prev_v, prev_u, prev_u_, &sum);
+		LINE* reference = (start->getType() == tBEND_del) ? end : start;
+		LINE* temp = new LINE(prev_v, slope, reference->getPath(0), reference->getPath(1));
+		sum += temp->getDistanceSum();
+		if (sum < minSum)
+			minSum = sum, minSumLine = temp;
 	}
 
 	//LINE* prev = Queue[0][0], *cur = Queue[0][0];

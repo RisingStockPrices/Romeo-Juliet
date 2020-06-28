@@ -7,6 +7,7 @@ int line_of_sight_id;
 vector<int> funnel_path_point(vector<int> chain1, vector<int> chain2, Point p);
 pair<vector<int>,Point> funnel_path(vector<int> chain1, vector<int> chain2);
 pair<vector<int>, Point> shortest_path_line(Point p1, Point p2, SPT* spt);
+
 bool isVisible(int from, int to);
 Point computeEndpoint(int lineFrom, int lineTo);
 Point foot_of_max_perpendicular(int p, Point origin, Point dest);
@@ -19,6 +20,13 @@ enum TYPE {
 	tBEND_add, //case where boundary cases overlap with bend events (type 1 (i))
 	tBEND_del
 };
+enum ROT {
+	DEFAULT,
+	CW,
+	CCW
+};
+
+bool is_tangent_slope(double slope, double from, double to, ROT direction);
 
 class LINE {
 protected:
@@ -210,6 +218,65 @@ public:
 class BEND : public LINE {
 	int orthogonalP[2];
 public:
+	BEND(int _v, int orth1, int orth2, double slope1, double slope2, ROT dir)
+	{
+		type = tBEND_add;
+		v = _v;
+		orthogonalP[0] = orth1, orthogonalP[1] = orth2;
+		Point V = point_list[v];
+
+		Point _foot = foot_of_perpendicular(_v, point_list[orth1], point_list[orth2]);
+		double tempSlope = computeSlope(V, _foot);
+
+		point_list.push_back(_foot);
+
+		if (is_tangent_slope(tempSlope, slope1, slope2, dir) && isVisible(_v,point_list.size()-1))
+		{
+			//point_list.push_back(_foot);
+		}
+		else
+		{
+			point_list.pop_back();
+			vector<Point> candidates;
+			
+			tempSlope = computeSlope(V, point_list[orth2]);
+			if (is_tangent_slope(tempSlope, slope1, slope2, dir))
+				candidates.push_back(point_list[orth2]);
+
+			Point end = computeEndpoint(orth1, orth2);
+			tempSlope = computeSlope(V, end);
+			if (is_tangent_slope(tempSlope, slope1, slope2, dir))
+				candidates.push_back(end);
+
+			for (int i = 0; i < 2; i++) {
+				Point dummy(V.get_x() +  1, V.get_y() + (i==0)?slope1:slope2);
+				point_list.push_back(dummy);
+				Point * p = get_line_intersection(orth1, orth2, v, point_list.size() - 1);
+				point_list.pop_back();
+				if (p != NULL) {
+					Point newP(p->get_x(), p->get_y());
+					candidates.push_back(newP);
+				}}
+		
+			double min = std::numeric_limits<double>::infinity();
+			int idx =0;
+			for (int i = 0; i < candidates.size(); i++)
+			{
+				double distance = dist(V, candidates[i]);
+				if (distance < min)
+				{
+					min = distance;
+					idx = i;
+				}
+			}
+			point_list.push_back(candidates[idx]);
+		}
+
+		endP[0] = computeEndpoint(v, point_list.size() - 1);
+		endP[1] = computeEndpoint(point_list.size() - 1, v);
+		point_list.pop_back();
+
+	}
 	BEND(int _v, int orth1, int orth2, SPT** spt, int idx, bool type1)
 	{
 		if (orth1 == _v || orth2 == _v)
@@ -219,12 +286,12 @@ public:
 			Point _foot = foot_of_max_perpendicular(_v, point_list[orth1], point_list[orth2]);
 			point_list.push_back(_foot);
 			//check if v and _foot are visible to each other, if not, abort (type Error)
-			
+			orthogonalP[0] = orth1;
+			orthogonalP[1] = orth2;
+			v = _v;
+
 			if (isVisible(_v, point_list.size() - 1))
-			{
-				orthogonalP[0] = orth1;
-				orthogonalP[1] = orth2;
-				v = _v;
+			{	
 				type = (type1)? tBEND_add:tBEND_del;
 
 				endP[0] = computeEndpoint(v, point_list.size() - 1);
@@ -253,7 +320,30 @@ public:
 			}
 			else
 			{
-				type = tERROR;
+				type = tBEND_add;//tERROR;
+				
+				endP[0] = computeEndpoint(v, orth2);
+				endP[1] = computeEndpoint(orth2, v);
+
+				pair<vector<int>, Point> res;
+				for (int i = 0; i < 2; i++)
+				{
+					res = shortest_path_line(endP[0], endP[1], spt[i]);
+					path[i] = res.first;
+					foot[i] = res.second;
+				}
+				if (path[idx].back() == orth2)
+					path[idx].pop_back();
+
+				for (int i = 0; i < 2; i++)
+				{
+					for (int j = 0; j < path[i].size() - 1; j++)
+						length += dist(path[i][j], path[i][j + 1]);
+					point_list.push_back(foot[i]);
+					length += dist(point_list.size() - 1, path[i].back());
+					point_list.pop_back();
+				}
+				slope = computeSlope(endP[0], endP[1]);
 			}
 			point_list.pop_back();
 			
@@ -262,7 +352,16 @@ public:
 
 };
 
+bool is_tangent_slope(double slope, double from, double to, ROT direction) {
 
+	//if (slope == from || slope == to)
+		//return false;
+	bool inBetween = (direction == CW) == (from > to);
+	if (inBetween)
+		return (from - slope) * (to - slope) < 0;
+	else
+		return (from - slope) * (to - slope) > 0;
+}
 
 /* finds (i) the triangle and (ii) edge the vector (FROM,TO) from START penetrates through first
    START must be either FROM or TO */

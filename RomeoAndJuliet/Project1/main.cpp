@@ -786,7 +786,7 @@ void add_test_point(int button, int state, int x, int y) {
 				events->compute_path_events();
 				events->compute_boundary_events();
 				events->compute_bend_events();
-				events->compute_min_sum();// MinSum();
+				//events->compute_min_sum();// MinSum();
 				
 				
 				Events = *events;
@@ -1041,11 +1041,9 @@ void display() {
 			case tBOUNDARY:
 				set_color_rgb(84, 231, 41);//green
 				break;
-			case tBEND_add || tBEND_del:
+			case tBEND_add:
+			case tBEND_del:
 				set_color_rgb(231, 58, 41);//red
-				break;
-			default:
-				set_color_rgb(129, 129, 129);//grey
 				break;
 			}
 			Point* points = line->getEndpoints();
@@ -1090,11 +1088,9 @@ void display() {
 				case tBOUNDARY:
 					set_color_rgb(84, 231, 41);//green
 					break;
-				case tBEND_add || tBEND_del:
+				case tBEND_add:
+				case tBEND_del:
 					set_color_rgb(231, 58, 41);//red
-					break;
-				default:
-					set_color_rgb(129, 129, 129);//grey
 					break;
 				}
 				glBegin(GL_LINES);
