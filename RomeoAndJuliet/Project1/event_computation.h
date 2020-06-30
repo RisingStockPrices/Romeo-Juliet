@@ -160,15 +160,21 @@ void EVENTS::sort_by_slope()
 			if (curS == Queue[i][curIdx]->getSlope())
 				break;
 		}
+		//this is for the tBEND_BOUNDARY_PATH events
+		if (curIdx != Queue[i].size() - 1 && Queue[i][curIdx + 1]->getSlope() == curS)
+			curIdx++;
+
 		int nxtIdx = Queue[i].size();
 		
 		ROT rot = rotation[i+1];
-		vector<LINE*>::iterator it = Queue[i].begin() + curIdx + 1;
+		vector<LINE*>::iterator it = Queue[i].begin() + curIdx + 1;//points to place right after path event
+
 		if (rot == CW) {
-			newQueue.insert(newQueue.begin(), it, Queue[i].end());
-			newQueue.insert(newQueue.end(), Queue[i].begin(), it);
+			newQueue.insert(newQueue.begin(), it, Queue[i].end());//path event 직후부터 끝까지 넣음
+			newQueue.insert(newQueue.end(), Queue[i].begin(), it);//처음부터 path event 까지 넣음
 			reverse(newQueue.begin(), newQueue.end());
 			Queue[i] = newQueue;
+		
 		}
 		else if (rot == CCW)
 		{
@@ -210,7 +216,8 @@ void EVENTS::compute_bend_events()
 						vector<int>::iterator it = find(prev.begin(), prev.end(), cur[idx_cur]);
 						if (it == prev.end()) //type 1 (ii)
 						{
-							BEND* bend = new BEND(rot, cur[idx_cur - 1], cur[idx_cur], Queue[i-1][0]->getSlope(), Queue[i][0]->getSlope(), rotation[idx]);
+							/*
+							BEND* bend = new BEND(rot, cur[idx_cur - 1], cur[idx_cur], slope_prev, slope_cur, rotation[idx]);
 							Point* endP = bend->getEndpoints();
 							pair<vector<int>, Point> res;
 							for (int k = 0; k < 2; k++)
@@ -225,7 +232,8 @@ void EVENTS::compute_bend_events()
 								Queue[i - 1].push_back(bend);
 							else
 								tempQueue.push_back(bend);
-							/*
+							
+							*/
 							BEND* bend = new BEND(rot, cur[idx_cur - 1], cur[idx_cur], spt,0,true);
 							idx_cur++;
 							if (bend->getType() != tERROR && is_tangent_slope(bend->getSlope(),slope_prev,slope_cur,rotation[idx]))
@@ -234,14 +242,15 @@ void EVENTS::compute_bend_events()
 									Queue[i - 1].push_back(bend);
 								else
 									tempQueue.push_back(bend);
-							}*/
+							}
 						}
 					}
 					if (idx_prev < prev.size()) {
 						vector<int>::iterator it = find(cur.begin(), cur.end(), prev[idx_prev]);
 						if (it == cur.end()) //type 2
 						{
-							BEND* bend = new BEND(rot, prev[idx_prev - 1], prev[idx_prev], Queue[i-1][0]->getSlope(), Queue[i][0]->getSlope(), rotation[idx]);
+							/*
+							BEND* bend = new BEND(rot, prev[idx_prev - 1], prev[idx_prev], slope_prev,slope_cur, rotation[idx]);
 							Point* endP = bend->getEndpoints();
 							pair<vector<int>, Point> res;
 							for (int k = 0; k < 2; k++)
@@ -255,7 +264,7 @@ void EVENTS::compute_bend_events()
 								Queue[i - 1].push_back(bend);
 							else
 								tempQueue.push_back(bend);
-							/*
+							*/
 							BEND* bend = new BEND(rot, prev[idx_prev - 1], prev[idx_prev], spt,0,false);
 							idx_prev++;
 							if (bend->getType() != tERROR && is_tangent_slope(bend->getSlope(),slope_prev,slope_cur,rotation[idx]))
@@ -264,7 +273,7 @@ void EVENTS::compute_bend_events()
 									Queue[i - 1].push_back(bend);
 								else
 									tempQueue.push_back(bend);
-							}*/
+							}
 						}
 					}
 
@@ -318,6 +327,18 @@ void EVENTS::compute_bend_events()
 		Queue[i].insert(Queue[i].end(), tempQueue.begin(), tempQueue.end());
 	}
 
+	ROT before = DEFAULT;
+	for (int i = 1; i < Queue.size(); i++)
+	{
+		ROT current = rotation[i];
+		if (before!=DEFAULT && before != current)
+		{
+			PATH* path = (PATH*) Queue[i-1][0];
+			BEND* type1 = new BEND(path);
+			Queue[i - 1].push_back(type1);
+		}
+		before = current;
+	}
 	sort_by_slope();
 }
 

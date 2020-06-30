@@ -1043,6 +1043,7 @@ void display() {
 				break;
 			case tBEND_add:
 			case tBEND_del:
+			case tBEND_BOUNDARY_PATH:
 				set_color_rgb(231, 58, 41);//red
 				break;
 			}
@@ -1090,6 +1091,7 @@ void display() {
 					break;
 				case tBEND_add:
 				case tBEND_del:
+				case tBEND_BOUNDARY_PATH:
 					set_color_rgb(231, 58, 41);//red
 					break;
 				}

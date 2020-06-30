@@ -17,8 +17,9 @@ enum TYPE {
 	tDEFAULT,
 	tPATH,
 	tBOUNDARY,
-	tBEND_add, //case where boundary cases overlap with bend events (type 1 (i))
-	tBEND_del
+	tBEND_add, 
+	tBEND_del,
+	tBEND_BOUNDARY_PATH
 };
 enum ROT {
 	DEFAULT,
@@ -218,6 +219,21 @@ public:
 class BEND : public LINE {
 	int orthogonalP[2];
 public:
+	BEND( PATH* reference)
+	{
+		type = tBEND_BOUNDARY_PATH;
+		v = reference->getV2();
+		
+		endP[0] = reference->getEndpoints()[0];
+		endP[1] = reference->getEndpoints()[1];
+
+		slope = reference->getSlope();
+
+		path[0] = reference->getPath(0);
+		path[1] = reference->getPath(1);
+		path[0].push_back(v);
+		path[1].push_back(reference->getV());
+	}
 	BEND(int _v, int orth1, int orth2, double slope1, double slope2, ROT dir)
 	{
 		type = tBEND_add;
@@ -367,7 +383,7 @@ public:
 bool is_tangent_slope(double slope, double from, double to, ROT direction) {
 
 	if (slope == from || slope == to)
-		return true;
+		return false;
 	bool inBetween = (direction == CW) == (from > to);
 	if (inBetween)
 		return (from - slope) * (to - slope) < 0;
