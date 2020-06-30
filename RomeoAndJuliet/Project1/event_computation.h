@@ -210,9 +210,17 @@ void EVENTS::compute_bend_events()
 						vector<int>::iterator it = find(prev.begin(), prev.end(), cur[idx_cur]);
 						if (it == prev.end()) //type 1 (ii)
 						{
-							BEND* bend = new BEND(rot, cur[idx_cur - 1], cur[idx_cur], slope_prev, slope_cur, rotation[idx]);
-							idx_cur++;
+							BEND* bend = new BEND(rot, cur[idx_cur - 1], cur[idx_cur], Queue[i-1][0]->getSlope(), Queue[i][0]->getSlope(), rotation[idx]);
+							Point* endP = bend->getEndpoints();
+							pair<vector<int>, Point> res;
+							for (int k = 0; k < 2; k++)
+							{
+								res = shortest_path_line(endP[0], endP[1], spt[k]);
+								bend->setPath(k, res);
+							}
 
+							idx_cur++;
+							
 							if (j == 0)
 								Queue[i - 1].push_back(bend);
 							else
@@ -233,7 +241,15 @@ void EVENTS::compute_bend_events()
 						vector<int>::iterator it = find(cur.begin(), cur.end(), prev[idx_prev]);
 						if (it == cur.end()) //type 2
 						{
-							BEND* bend = new BEND(rot, prev[idx_prev - 1], prev[idx_prev], slope_prev, slope_cur, rotation[idx]);
+							BEND* bend = new BEND(rot, prev[idx_prev - 1], prev[idx_prev], Queue[i-1][0]->getSlope(), Queue[i][0]->getSlope(), rotation[idx]);
+							Point* endP = bend->getEndpoints();
+							pair<vector<int>, Point> res;
+							for (int k = 0; k < 2; k++)
+							{
+								res = shortest_path_line(endP[0], endP[1], spt[k]);
+								bend->setPath(k, res);
+							}
+
 							idx_prev++;
 							if (j == 0)
 								Queue[i - 1].push_back(bend);

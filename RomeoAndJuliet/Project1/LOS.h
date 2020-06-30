@@ -248,15 +248,26 @@ public:
 			if (is_tangent_slope(tempSlope, slope1, slope2, dir))
 				candidates.push_back(end);
 
+			Point newP;
 			for (int i = 0; i < 2; i++) {
-				Point dummy(V.get_x() +  1, V.get_y() + (i==0)?slope1:slope2);
-				point_list.push_back(dummy);
-				Point * p = get_line_intersection(orth1, orth2, v, point_list.size() - 1);
-				point_list.pop_back();
-				if (p != NULL) {
-					Point newP(p->get_x(), p->get_y());
-					candidates.push_back(newP);
-				}}
+				Point dummy(V.get_x() + 1, V.get_y() + ((i == 0) ? slope1 : slope2));
+				newP = line_intersection(point_list[orth1], point_list[orth2], point_list[v], dummy);
+				if (newP.get_x() != numeric_limits<double>::infinity())
+				{
+					point_list.push_back(newP);
+					if (isVisible(v, point_list.size()-1))
+						candidates.push_back(newP);
+					point_list.pop_back();
+
+				}
+			}
+				//point_list.push_back(dummy);
+				//Point * p = get_line_intersection(orth1, orth2, v, point_list.size() - 1);
+				//point_list.pop_back();
+				//if (p != NULL) {
+			//		Point* newP= new Point(p->get_x(), p->get_y());
+					//candidates.push_back(*newP);
+				//}}
 		
 			double min = std::numeric_limits<double>::infinity();
 			int idx =0;
@@ -274,6 +285,7 @@ public:
 
 		endP[0] = computeEndpoint(v, point_list.size() - 1);
 		endP[1] = computeEndpoint(point_list.size() - 1, v);
+		slope = computeSlope(endP[0], endP[1]);
 		point_list.pop_back();
 
 	}
@@ -354,8 +366,8 @@ public:
 
 bool is_tangent_slope(double slope, double from, double to, ROT direction) {
 
-	//if (slope == from || slope == to)
-		//return false;
+	if (slope == from || slope == to)
+		return true;
 	bool inBetween = (direction == CW) == (from > to);
 	if (inBetween)
 		return (from - slope) * (to - slope) < 0;

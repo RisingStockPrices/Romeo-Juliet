@@ -960,6 +960,55 @@ bool in_between_line(int rot, int p1, int p2, int v)
 
 }
 
+Point line_intersection(Point p1, Point p2, Point q1, Point q2)
+{
+	double x = numeric_limits<double>::infinity(), y = numeric_limits<double>::infinity();
+	double m, n, a, b;
+	bool check1=false, check2=false;
+	if (p1.get_x() == p2.get_x()) {
+		x = p1.get_x();	
+		check1 = true;
+	}
+	else {
+		m = (p1.get_y() - p2.get_y()) / (p1.get_x() - p2.get_x());
+		n = p1.get_y() - m * p1.get_x();
+	}
+
+	if (q1.get_x() == q2.get_x())
+	{
+		check2 = true;
+		x = q2.get_x();
+	}
+	else {
+		a = (q1.get_y() - q2.get_y()) / (q1.get_x() - q2.get_x()); 
+		b = q1.get_y() - a * q1.get_x();
+	}
+
+	if (check1)
+	{
+		if (check2)
+			printf("parallel");
+		else
+			y = a * x + b;
+	}
+	else
+	{
+		if (check2)
+			y = m * x + n;
+		else {
+			if (m == a)
+				printf("parallel");
+			else
+			{
+				x = (b - n) / (m - a);
+				y = m * x + n;
+			}
+		}
+	}
+
+	Point* newP = new Point(x, y);
+	return *newP;
+}
 /* returns the pointer the to Point such that the point is the intersection of
 the extend line of (p1, p2) and the bounded line (q1,q2) (segment) */
 Point* get_line_intersection(int p1, int p2, int q1, int q2)
