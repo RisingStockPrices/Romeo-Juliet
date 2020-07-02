@@ -38,6 +38,7 @@ protected:
 	vector<vector<int>> path; //stores path from s or t to the line of sight
 	Point foot[2];
 	double length=0;
+	bool type1;
 public:
 	LINE() {
 		path.push_back(vector<int>());
@@ -224,15 +225,15 @@ public:
 		type = tBEND_BOUNDARY_PATH;
 		v = reference->getV2();
 		
-		endP[0] = reference->getEndpoints()[0];
-		endP[1] = reference->getEndpoints()[1];
+		endP[0] = point_list[reference->getV()];//reference->getEndpoints()[0];
+		endP[1] = point_list[v];// reference->getEndpoints()[1];
 
 		slope = reference->getSlope();
 
-		path[0] = reference->getPath(0);
-		path[1] = reference->getPath(1);
-		path[0].push_back(v);
-		path[1].push_back(reference->getV());
+		//path[0] = reference->getPath(0);
+		//path[1] = reference->getPath(1);
+		//path[0].push_back(v);
+		//path[1].push_back(reference->getV());
 	}
 	BEND(int _v, int orth1, int orth2, double slope1, double slope2, ROT dir)
 	{
@@ -377,7 +378,11 @@ public:
 			
 		}
 	}
-
+	void setPath(int idx, vector<int> pth)
+	{
+		if (idx == 0 || idx == 1)
+			path[idx] = pth;
+	}
 };
 
 bool is_tangent_slope(double slope, double from, double to, ROT direction) {

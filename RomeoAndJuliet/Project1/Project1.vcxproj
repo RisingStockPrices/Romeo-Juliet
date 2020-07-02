@@ -146,6 +146,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="min_computation.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Chain.h" />
