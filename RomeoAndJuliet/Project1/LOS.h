@@ -333,17 +333,32 @@ public:
 				endP[0] = computeEndpoint(v, point_list.size() - 1);
 				endP[1] = computeEndpoint(point_list.size() - 1, v);
 
-				pair<vector<int>, Point> res;
+
+				//set shortest path from s/t to line
+				//for the side that doesn't involve the "orthogonality", compute manually 
+				pair<vector<int>, Point> res = shortest_path_line(endP[0], endP[1], spt[!idx]);
+				path[!idx] = res.first, foot[!idx] = res.second;
+				//fpr the side involving the orthogonality, we don't have to do the whole thing again
+				path[idx] = spt[idx]->retrieve_shortest_path(orth1);
+				path[idx].push_back(orth2);
+				foot[idx] = foot_of_max_perpendicular(orth2, endP[0], endP[1]);
+
+				/*
 				for (int i = 0; i < 2; i++)
 				{
 					res = shortest_path_line(endP[0], endP[1], spt[i]);
 					path[i] = res.first;
 					foot[i] = res.second;
 				}
+
+				vector<int> testingOtherShortestPathWorkaround = spt[idx]->retrieve_shortest_path(orth1);
+				testingOtherShortestPathWorkaround.push_back(orth2);
+				path[idx] = testingOtherShortestPathWorkaround;
+				foot[idx] = foot_of_max_perpendicular(path[idx].back(), endP[0], endP[1]);
 				//checking for both orthogonal points
-				if (path[idx].back() != orth2)
-					path[idx].push_back(orth2);
-				
+				//if (path[idx].back() != orth2)
+				//	path[idx].push_back(orth2);
+				*/
 				for (int i = 0; i < 2; i++)
 				{
 					for (int j = 0; j < path[i].size() - 1; j++)
