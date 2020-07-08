@@ -861,6 +861,7 @@ void show_sp_line(int key, int x, int y)
 
 	shortest_path_to_line[0] = Queue[firstIdx][secondIdx]->getShortestPath(0);
 	shortest_path_to_line[1] = Queue[firstIdx][secondIdx]->getShortestPath(1);
+	printf("%f\n", Queue[firstIdx][secondIdx]->getLength());
 	/*
 
 	if (Events.get_queue().empty())

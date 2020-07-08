@@ -38,7 +38,7 @@ protected:
 	vector<vector<int>> path; //stores path from s or t to the line of sight
 	Point foot[2];
 	double length=0;
-	bool type1;
+	bool type1 = false;
 public:
 	LINE() {
 		path.push_back(vector<int>());
@@ -52,6 +52,13 @@ public:
 		path.push_back(vector<int>());
 		path.push_back(vector<int>());
 		path[0] = path1, path[1] = path2;
+	}
+	bool getType1(void) {
+		return type1;
+	}
+	void setType1(bool to)
+	{
+		type1 = to;
 	}
 	double getLength() {
 		return length;
