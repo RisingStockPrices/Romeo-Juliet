@@ -37,7 +37,7 @@ protected:
 	int v;
 	vector<vector<int>> path; //stores path from s or t to the line of sight
 	Point foot[2];
-	double length=0;
+	double length[2] = { 0,0 };
 	bool type1 = false;
 public:
 	LINE() {
@@ -52,6 +52,13 @@ public:
 		path.push_back(vector<int>());
 		path.push_back(vector<int>());
 		path[0] = path1, path[1] = path2;
+		for (int idx = 0; idx < 2; idx++) {
+			for (int i = 0; i < path[idx].size() - 1; i++)
+				length[idx] += dist(path[idx][i], path[idx][i + 1]);
+		//length doesn't include path to foot in this case....
+		}
+		
+
 	}
 	bool getType1(void) {
 		return type1;
@@ -60,8 +67,14 @@ public:
 	{
 		type1 = to;
 	}
-	double getLength() {
-		return length;
+	double getLength(void)
+	{
+		return length[0] + length[1];
+	}
+	double getLength(int idx) {
+		if(idx==0||idx==1)
+			return length[idx];
+		else return 0;
 	}
 	void computeEndpointWithSlope(void)
 	{
@@ -82,6 +95,16 @@ public:
 				break;
 			}
 		}
+	}
+	double getLength_noFoot(int idx)
+	{
+		double sum=0;
+		if (idx == 0 || idx == 1)
+		{
+			for (int i = 0; i < path[idx].size() - 1; i++)
+				sum += dist(path[idx][i], path[idx][i + 1]);
+		}
+		return sum;
 	}
 	//returns sum of distances from each _s and _t to the line in question
 	double getDistanceSum(void)
@@ -177,9 +200,9 @@ public:
 			path[i] = res.first;
 			foot[i] = res.second;
 			for (int j = 0; j < path[i].size()-1; j++)
-				length += dist(path[i][j], path[i][j + 1]);
+				length[i] += dist(path[i][j], path[i][j + 1]);
 			point_list.push_back(foot[i]);
-			length += dist(point_list.size() - 1, path[i].back());
+			length[i] += dist(point_list.size() - 1, path[i].back());
 			point_list.pop_back();
 		}
 
@@ -215,9 +238,9 @@ public:
 			path[i] = res.first;
 			foot[i] = res.second;
 			for (int j = 0; j < path[i].size() - 1; j++)
-				length += dist(path[i][j], path[i][j + 1]);
+				length[i] += dist(path[i][j], path[i][j + 1]);
 			point_list.push_back(foot[i]);
-			length += dist(point_list.size() - 1, path[i].back());
+			length[i] += dist(point_list.size() - 1, path[i].back());
 			point_list.pop_back();
 		}
 	}
@@ -362,9 +385,9 @@ public:
 				for (int i = 0; i < 2; i++)
 				{
 					for (int j = 0; j < path[i].size() - 1; j++)
-						length += dist(path[i][j], path[i][j + 1]);
+						length[i] += dist(path[i][j], path[i][j + 1]);
 					point_list.push_back(foot[i]);
-					length += dist(point_list.size() - 1, path[i].back());
+					length[i] += dist(point_list.size() - 1, path[i].back());
 					point_list.pop_back();
 				}
 				slope = computeSlope(endP[0], endP[1]);
@@ -389,9 +412,9 @@ public:
 				for (int i = 0; i < 2; i++)
 				{
 					for (int j = 0; j < path[i].size() - 1; j++)
-						length += dist(path[i][j], path[i][j + 1]);
+						length[i] += dist(path[i][j], path[i][j + 1]);
 					point_list.push_back(foot[i]);
-					length += dist(point_list.size() - 1, path[i].back());
+					length[i] += dist(point_list.size() - 1, path[i].back());
 					point_list.pop_back();
 				}
 				slope = computeSlope(endP[0], endP[1]);

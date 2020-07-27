@@ -4,7 +4,7 @@
 using namespace std;
 
 LINE* minSumLine;
-
+LINE* minMaxLine;
 
 class EVENTS {
 	int next_line_id;
@@ -36,6 +36,7 @@ public:
 	void compute_path_events();
 	void compute_boundary_events();
 	void compute_bend_events();
+	void compute_min_max(void);
 	void compute_min_sum(void);
 	double computeMinSum(void);
 };
@@ -432,15 +433,72 @@ double getSlopeMinSum(double bound1, double bound2, ROT dir, int v, int u, int u
 	*sum = minSumDist;
 	return minSlope;
 }
+double getSlopeMinMax(LINE* prev, LINE* cur, ROT dir, int v, int u, int u_, double* Max)
+{
+	double bound1 = prev->getSlope();
+	double bound2 = prev->getSlope();
 
+	double minDist = max(prev->getLength(0), prev->getLength(1));
+	double minSlope;
+
+	Point U = point_list[u];
+	Point U_ = point_list[u_];
+	Point V = point_list[v];
+	double c1 = U.get_x() - V.get_x();
+	double c2 = V.get_y() - U.get_y();
+	double c_1 = U_.get_x() - V.get_x();
+	double c_2 = V.get_y() - U_.get_y();
+
+	//check common point9
+	double Bsquare = (prev->getLength_noFoot(0) - prev->getLength_noFoot(1));
+	Bsquare *= Bsquare;
+	double D1 = (c1 + c_1), D2 = (c2 + c_2);
+	double a = D1*D1-Bsquare;
+	double b = 2*D1*D2;
+	double c = D2 * D2 - Bsquare;
+
+	double D = b * b - 4 * a*c;
+	double tempSlope;
+	
+	if (D == 0)
+		tempSlope = -b / (2*a);
+	else if(D>0){
+		double first = (-b + sqrt(D)) / (2*a);
+		double second = (-b - sqrt(D)) / (2*a);
+
+		if ((c1*first + c2)*(c_1*first + c_2) < 0)
+			tempSlope = first;
+		else if ((c1*second + c2)*(c_1*second + c_2) < 0)
+			tempSlope = second;
+		else {
+			printf("this shouldn't be happening\n");
+			exit(34);
+		}
+	}
+
+	if (D>=0 && is_tangent_slope(tempSlope, bound1, bound2, dir))
+	{
+		*Max = min(dist(tempSlope, u, v) + prev->getLength(0), dist(tempSlope, u_, v)+prev->getLength(1));
+		return tempSlope;
+	}
+	else
+	{
+		//가장 자리 확인 띠
+		double first = max(dist(bound1, u, v) + prev->getLength(0), dist(bound1, u_, v) + prev->getLength(1));
+		double second = max(dist(bound2, u, v) + cur->getLength(0), dist(bound2, u_, v) + cur->getLength(1));
+		
+		*Max = min(first, second);
+		return (first > second) ? second : first;
+	}
+}
 double getSlopeMinSum(LINE * prev, LINE * cur, ROT dir, int v, int u, int u_, double* sum)
 {
 	double bound1 = prev->getSlope();
 	double bound2 = cur->getSlope();
 	//case (i) : boundaries
 	double minDist = min(prev->getLength(), cur->getLength());
-	double minSlope = (minDist == bound1) ? bound1 : bound2;
-
+	double minSlope;// = (minDist == bound1) ? bound1 : bound2;
+	
 	Point U = point_list[u];
 	Point U_ = point_list[u_];
 	Point V = point_list[v];
@@ -486,12 +544,65 @@ double getSlopeMinSum(LINE * prev, LINE * cur, ROT dir, int v, int u, int u_, do
 	*sum = minDist;
 	return minSlope;
 }
+void EVENTS::compute_min_max(void) {
+	//find v
+	int v, i;
+	double slope_prev, slope_next;
+	for (i = 0; i < Queue.size()-1; i++)
+	{
+		LINE* line = Queue[i][0];
+		if (line->getLength(0) >= line->getLength(1)) {
+			v = line->getV();
+			slope_prev = line->getSlope();
+			slope_next = Queue[i + 1][0]->getSlope();
+			break;
+		}
+	}
+
+	LINE* start = Queue[i][0], *end = Queue[i][0], *prev = Queue[i][0];
+	double minMax = std::numeric_limits<double>::infinity();
+	vector<double> tempSum;
+	LINE* reference;
+	for (int j = 0; j < Queue[i].size(); j++)
+	{
+		end = Queue[i][j];
+		TYPE type_start = start->getType();
+		TYPE type_end = end->getType();
+
+		if (type_end == tBOUNDARY)
+			continue;
+
+		int idx = (j == 0) ? i : i + 1;
+		if (type_start == tBEND_del || start->getType1())
+			reference = end;
+		else
+			reference = start;
+
+		int u = reference->getPath(0).back();
+		int u_ = reference->getPath(1).back();
+		int v = reference->getV();
+		if (type_end == tPATH)
+			v = start->getV();
+
+		double sum;
+
+		//needs to be changed to min max
+		double slope = getSlopeMinMax(start, end, rotation[idx], v, u, u_, &sum);
+		//double slope = getSlopeMinSum(start, cur, rotation[idx], refV, refU, refU_, &sum);
+		LINE * temp = new LINE(v, slope, reference->getPath(0), reference->getPath(1)); //need to adjust this later for bend_del cases
+		sum = max(temp->getLength(0)+dist(slope,u,v), temp->getLength(1)+dist(slope,u_,v));// temp->getDistanceSum();
+		//tempSum.push_back(sum);
+		if (sum < minMax) {
+			minMax = sum; minMaxLine = temp;
+		}
+
+		start = end;
+	}
+
+}
 void EVENTS::compute_min_sum(void)
 {
 	LINE* start = Queue[0][0], * end = Queue[0][0], * prev = Queue[0][0];
-	LINE* cur = Queue[0][0], * next;
-	int u = -1, u_ = -1, v = -1, idx;
-	int prev_u = cur->getPath(0).back(), prev_u_ = cur->getPath(1).back(), prev_v = cur->getV();
 	double minSum = std::numeric_limits<double>::infinity();
 	vector<double> tempSum;
 	LINE* reference;

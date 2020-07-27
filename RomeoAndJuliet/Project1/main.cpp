@@ -13,6 +13,7 @@
 #include "polygon_decomposition.h"
 #include <GL/glew.h>
 #include <GL/freeglut.h>
+#include <glm/glm.hpp>
 #include <sstream>
 #include "hourglass_operation.h"
 #include "ShortestPathTree.h"
@@ -21,6 +22,7 @@
 #define NULL_HELPER -1
 #define PI 3.1415926535897931
 using namespace std;
+
 
 int read_file(string filePath);
 //Hourglass find_shortest_path_test_points(vector<Point> test_points);
@@ -38,7 +40,6 @@ Hourglass final_hour;
 int test_point_index;
 bool displayAllEvents = false;
 
-
 Hourglass test_hourglass;
 
 ////////////////////
@@ -51,11 +52,112 @@ vector<Point> shortest_path_to_line[2];
 int firstIdx = 0;
 int secondIdx = 0;
 EVENTS Events;
+double length = 0;
+enum MODE {
+	MIN_MAX,//default
+	MIN_SUM
+};
 
-
+MODE mode = MIN_MAX;
 //Hourglass find_shortest_path(Point origin, Point dest,bool sp_case);
 Hourglass construct_hourglass_point_line(int p, Edge e);
 int w_h=800, w_w=800;
+
+void renderBitmapString(float x, float y, void* font, char* string)
+{
+	char* c;
+	glRasterPos2f(x, y);
+	for (c = string; *c != '\0'; c++) {
+		glutBitmapCharacter(font, *c);
+	}
+}
+
+/*
+struct Character {
+	unsigned int TextureID;  // ID handle of the glyph texture
+	glm::ivec2   Size;       // Size of glyph
+	glm::ivec2   Bearing;    // Offset from baseline to left/top of glyph
+	unsigned int Advance;    // Offset to advance to next glyph
+};
+
+std::map<char, Character> Characters;
+
+int display_numbers()
+{
+	///all FT functions return nonnegative integer in case of an error
+	//load library and initialize
+	FT_Library ft;
+	if (FT_Init_FreeType(&ft))
+	{
+		std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+		return -1;
+	}
+
+	//load font as 'face'
+	FT_Face face;
+	if (FT_New_Face(ft, "fonts/arial.ttf", 0, &face))
+	{
+		std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
+		return -1;
+	}
+
+	//set pixel font size to extract from the face
+	//setting width to 0 -> dynamically sets width relative to height
+	FT_Set_Pixel_Sizes(face, 0, 48);
+
+	//activates the face by calling load_char function, gonna load 'x'
+	if (FT_Load_Char(face, 'X', FT_LOAD_RENDER))
+	{
+		std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+		return -1;
+	}
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // disable byte-alignment restriction
+
+	//render ascii characters on by one and store in map 'CHARACTERS'
+	for (unsigned char c = 0; c < 128; c++)
+	{
+		// load character glyph 
+		if (FT_Load_Char(face, c, FT_LOAD_RENDER))
+		{
+			std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+			continue;
+		}
+		// generate texture
+		unsigned int texture;
+		glGenTextures(1, &texture);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glTexImage2D(
+			GL_TEXTURE_2D,
+			0,
+			GL_RED,
+			face->glyph->bitmap.width,
+			face->glyph->bitmap.rows,
+			0,
+			GL_RED,
+			GL_UNSIGNED_BYTE,
+			face->glyph->bitmap.buffer
+		);
+		// set texture options
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		// now store character for later use
+		Character character = {
+			texture,
+			glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
+			glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
+			face->glyph->advance.x
+		};
+		Characters.insert(std::pair<char, Character>(c, character));
+	}
+	FT_Done_Face(face);
+	FT_Done_FreeType(ft);
+
+}
+
+*/
 
 void construct_hourglasses() {
 	for (int i = 0; i < d_size; i++) {
@@ -786,8 +888,8 @@ void add_test_point(int button, int state, int x, int y) {
 				events->compute_path_events();
 				events->compute_boundary_events();
 				events->compute_bend_events();
-				events->compute_min_sum();// MinSum();
-				
+				//events->compute_min_sum();// MinSum();
+				events->compute_min_max();
 				
 				Events = *events;
 			}
@@ -807,6 +909,7 @@ void clear_test_points() {
 	shortest_path_to_line[0] = vector<Point>();
 	shortest_path_to_line[1] = vector<Point>();
 	minSumLine = NULL;
+	minMaxLine = NULL;
 	displayAllEvents = false;
 	Events = *(new EVENTS());
 	firstIdx = 0;
@@ -821,7 +924,10 @@ void special_keys(unsigned char key, int x, int y) {
 	case 'a':
 		displayAllEvents = !displayAllEvents;
 		break;
-
+	case 'M':
+	case 'm':
+		mode = (MODE)((mode + 1) % 2);
+		break;
 	}
 	glutPostRedisplay();
 } 
@@ -861,7 +967,8 @@ void show_sp_line(int key, int x, int y)
 
 	shortest_path_to_line[0] = Queue[firstIdx][secondIdx]->getShortestPath(0);
 	shortest_path_to_line[1] = Queue[firstIdx][secondIdx]->getShortestPath(1);
-	printf("%f\n", Queue[firstIdx][secondIdx]->getLength());
+	
+	//printf("%f\n", Queue[firstIdx][secondIdx]->getLength());
 	/*
 
 	if (Events.get_queue().empty())
@@ -989,7 +1096,8 @@ void display() {
 	glLoadIdentity();
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
-	gluOrtho2D(min_x, max_x, min_y, max_y);
+	int rim = 20;
+	gluOrtho2D(min_x-rim, max_x+rim, min_y- rim, max_y+ rim);
 	glEnable(GL_POINT_SMOOTH);
 	glEnable(GL_POLYGON_SMOOTH);
 
@@ -1044,7 +1152,6 @@ void display() {
 				break;
 			case tBEND_add:
 			case tBEND_del:
-			case tBEND_BOUNDARY_PATH:
 				set_color_rgb(231, 58, 41);//red
 				break;
 			}
@@ -1058,10 +1165,29 @@ void display() {
 		set_color_rgb(178, 102, 255);
 		for (int i = 0; i < (int)shortest_path_to_line[0].size() - 1; i++)
 		{
-			glVertex2d(shortest_path_to_line[0][i].get_x(), shortest_path_to_line[0][i].get_y());
-			glVertex2d(shortest_path_to_line[0][i + 1].get_x(), shortest_path_to_line[0][i + 1].get_y());
+			Point p1 = shortest_path_to_line[0][i];
+			Point p2 = shortest_path_to_line[0][i + 1];
+			glVertex2d(p1.get_x(), p1.get_y());
+			glVertex2d(p2.get_x(), p2.get_y());
 		}
 		glEnd();
+
+		for (int i = 0; i < (int)shortest_path_to_line[0].size() - 1; i++)
+		{
+			Point p1 = shortest_path_to_line[0][i];
+			Point p2 = shortest_path_to_line[0][i + 1];
+
+			std::stringstream sstrm;
+			double length = dist(p1, p2);
+			sstrm << length;
+			double x = (p1.get_x() + p2.get_x()) / 2.0;
+			double y = (p1.get_y() + p2.get_y()) / 2.0;
+			string str = sstrm.str();
+			char* lengthStr = (char*)str.c_str();
+			renderBitmapString(x, y, GLUT_BITMAP_TIMES_ROMAN_24, lengthStr);
+		}
+
+
 
 		glBegin(GL_LINES);
 		set_color_rgb(255, 103, 191);//pretty pink
@@ -1072,6 +1198,22 @@ void display() {
 			glVertex2d(shortest_path_to_line[1][i + 1].get_x(), shortest_path_to_line[1][i + 1].get_y());
 		}
 		glEnd();
+
+		for (int i = 0; i < (int)shortest_path_to_line[1].size() - 1; i++)
+		{
+			Point p1 = shortest_path_to_line[1][i];
+			Point p2 = shortest_path_to_line[1][i + 1];
+
+			std::stringstream sstrm;
+			double length = dist(p1, p2);
+			sstrm << length;
+			double x = (p1.get_x() + p2.get_x()) / 2.0;
+			double y = (p1.get_y() + p2.get_y()) / 2.0;
+			string str = sstrm.str();
+			char* lengthStr = (char*)str.c_str();
+			renderBitmapString(x, y, GLUT_BITMAP_TIMES_ROMAN_24, lengthStr);
+		}
+
 	}
 	else //display all events at once
 	{
@@ -1105,8 +1247,32 @@ void display() {
 		}
 	}
 
+	if (!Events.getQueue().empty()) {
+		LINE* current = Events.getQueue()[firstIdx][secondIdx];
+		if (mode == MIN_MAX)
+			length = max(current->getLength(0), current->getLength(1));
+		else
+			length = current->getLength();
+
+		std::stringstream sstrm;
+		sstrm << length;
+		string str = sstrm.str();
+		char* lengthStr = (char*)str.c_str();
+		renderBitmapString(min_x + 10, min_y + 35, GLUT_BITMAP_HELVETICA_18, (char*)"Press M/m to toggle btw minMax/minSum");
+		switch (mode)
+		{
+		case MIN_MAX:
+			renderBitmapString(min_x + 10, min_y + 10, GLUT_BITMAP_HELVETICA_18, (char*)"MIN MAX :");
+			break;
+		case MIN_SUM:
+			renderBitmapString(min_x + 10, min_y + 10, GLUT_BITMAP_HELVETICA_18, (char*)"MIN SUM :");
+			break;
+		}
+		renderBitmapString(min_x + 120, min_y + 10, GLUT_BITMAP_TIMES_ROMAN_24, lengthStr);
+	}
+
 	//shows result for minSum
-	if (minSumLine != NULL) {
+	if (mode==MIN_SUM && minSumLine != NULL) {
 		glBegin(GL_LINES);
 		set_color_rgb(0, 0, 0);
 		Point* EndP = minSumLine->getEndpoints();
@@ -1115,38 +1281,25 @@ void display() {
 		glVertex2d(p2.get_x(), p2.get_y());
 		glEnd();
 	}
+	else if (mode == MIN_MAX && minMaxLine != NULL)
+	{
+		glBegin(GL_LINES);
+		set_color_rgb(0, 0, 0);
+		Point* EndP = minMaxLine->getEndpoints();
+		Point p1 = EndP[0], p2 = EndP[1];
+		glVertex2d(p1.get_x(), p1.get_y());
+		glVertex2d(p2.get_x(), p2.get_y());
+		glEnd();
+	}
+
+
+
 
 	/* Emphasizes the two test points (start and end vertices of the shortest path) */
 	glColor3d(0, 0.47, 0.43);
 	for (int t = 0; t <(int)test_points.size(); t++)
 		display_point(test_points[t]);
 	
-	/*
-	if (test_points.size() >= 2) {
-		glColor3f(0.0f, 1.0f, 0.0f);
-		Chain ** first_chain = final_hour.get_first_chain();
-		for (int i = 0; i < 2; i++) {
-			if (first_chain[i] == NULL) continue;
-			display_chain(first_chain[i]);
-		}
-
-		String * s = final_hour.get_string();
-		if (s != NULL) display_string(s);
-
-		Chain ** second_chain = final_hour.get_second_chain();
-		for (int i = 0; i < 2; i++) {
-			if (second_chain[i] == NULL) continue;
-			display_chain(second_chain[i]);
-		}
-
-		glColor3f(0.0f, 1.0f, 1.0f);
-		Edge * e_list = final_hour.get_edge_list();
-		for (int i = 0; i < 2; i++) {
-			display_edge(e_list[i]);
-		}
-	}*/
-	
-
 	/* Emphasizes the vertices of the polygon boundary */
 	glColor3f(0.5f, 0.7f, 0.30f);
 	glColor3f(1, 1, 0);
@@ -1158,6 +1311,17 @@ void display() {
 		glColor3f(1, 1, 0);
 	}
 	glEnd();
+
+	//display point numbers
+	set_color_rgb(0, 0, 0);
+	for (int i = 0; i < v_num; i++)
+	{
+		stringstream sstrm;
+		sstrm << i;
+		string str = sstrm.str();
+		char* intToString = (char*)str.c_str();
+		renderBitmapString(point_list[i].get_x(), point_list[i].get_y(), GLUT_BITMAP_9_BY_15, intToString);
+	}
 
 
 
