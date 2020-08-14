@@ -58,7 +58,7 @@ enum MODE {
 	MIN_SUM
 };
 
-MODE mode = MIN_MAX;
+MODE mode = MIN_MAX;//SUM;
 //Hourglass find_shortest_path(Point origin, Point dest,bool sp_case);
 Hourglass construct_hourglass_point_line(int p, Edge e);
 int w_h=800, w_w=800;
@@ -71,93 +71,6 @@ void renderBitmapString(float x, float y, void* font, char* string)
 		glutBitmapCharacter(font, *c);
 	}
 }
-
-/*
-struct Character {
-	unsigned int TextureID;  // ID handle of the glyph texture
-	glm::ivec2   Size;       // Size of glyph
-	glm::ivec2   Bearing;    // Offset from baseline to left/top of glyph
-	unsigned int Advance;    // Offset to advance to next glyph
-};
-
-std::map<char, Character> Characters;
-
-int display_numbers()
-{
-	///all FT functions return nonnegative integer in case of an error
-	//load library and initialize
-	FT_Library ft;
-	if (FT_Init_FreeType(&ft))
-	{
-		std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
-		return -1;
-	}
-
-	//load font as 'face'
-	FT_Face face;
-	if (FT_New_Face(ft, "fonts/arial.ttf", 0, &face))
-	{
-		std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
-		return -1;
-	}
-
-	//set pixel font size to extract from the face
-	//setting width to 0 -> dynamically sets width relative to height
-	FT_Set_Pixel_Sizes(face, 0, 48);
-
-	//activates the face by calling load_char function, gonna load 'x'
-	if (FT_Load_Char(face, 'X', FT_LOAD_RENDER))
-	{
-		std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
-		return -1;
-	}
-
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // disable byte-alignment restriction
-
-	//render ascii characters on by one and store in map 'CHARACTERS'
-	for (unsigned char c = 0; c < 128; c++)
-	{
-		// load character glyph 
-		if (FT_Load_Char(face, c, FT_LOAD_RENDER))
-		{
-			std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
-			continue;
-		}
-		// generate texture
-		unsigned int texture;
-		glGenTextures(1, &texture);
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glTexImage2D(
-			GL_TEXTURE_2D,
-			0,
-			GL_RED,
-			face->glyph->bitmap.width,
-			face->glyph->bitmap.rows,
-			0,
-			GL_RED,
-			GL_UNSIGNED_BYTE,
-			face->glyph->bitmap.buffer
-		);
-		// set texture options
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		// now store character for later use
-		Character character = {
-			texture,
-			glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
-			glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
-			face->glyph->advance.x
-		};
-		Characters.insert(std::pair<char, Character>(c, character));
-	}
-	FT_Done_Face(face);
-	FT_Done_FreeType(ft);
-
-}
-
-*/
 
 void construct_hourglasses() {
 	for (int i = 0; i < d_size; i++) {
@@ -656,91 +569,6 @@ hourglass.set_string(new String(string));
 return hourglass;
 }
 
-
-/*
-void shortest_path_point_to_line(int p, Edge e)
-{
-	shortest_path = vector<Point>();
-
-	//second chain 에 edge 가 오게 설정됨, chain 시작은 apex 부터!!
-	Hourglass hourglass = construct_hourglass_point_line(p, e);
-	int apex = hourglass.get_apex(1);
-	vector<int> hourglass_string = hourglass.get_string_point_list();
-	for (int i = 0; i < hourglass_string.size(); i++)//insert point~apex
-	{
-		shortest_path.push_back(point_list[hourglass_string[i]]);
-		if (hourglass_string[i] == apex)
-			break;
-	}
-
-	vector<int> funnel_first_chain = hourglass.get_second_chain()[0]->get_point_list();
-	vector<int> funnel_second_chain = hourglass.get_second_chain()[1]->get_point_list();
-
-	if (funnel_first_chain.size() == 1 || funnel_second_chain.size() == 1)
-	{
-		printf("chain containing only apex.... This shouldn't be happening\n");
-		exit(13);
-	}
-
-	int next_first = funnel_first_chain[1];
-	int next_second = funnel_second_chain[1];
-	
-	Point foot_perpendicular = foot_of_perpendicular(apex, e);
-	point_list.push_back(foot_perpendicular);
-	int foot_index = point_list.size() - 1;
-
-	double apex_to_first_angle = calculate_angle_between(apex, foot_index, next_first);
-	double apex_to_second_angle = calculate_angle_between(apex, foot_index, next_second);
-
-	bool both_left = (apex_to_first_angle <= 0) && (apex_to_second_angle <= 0);
-	bool both_right = (apex_to_first_angle >= 0) && (apex_to_second_angle >= 0);
-
-	if(!both_left && !both_right) // balanced case
-	{
-		shortest_path.push_back(foot_perpendicular);
-		point_list.pop_back();
-		return;
-	}
-
-	bool(*side)(int, int, int) = both_left ? is_left : is_right;
-	vector<int>* leading_chain;
-
-	if (abs(apex_to_first_angle) - abs(apex_to_second_angle) > 0)
-		leading_chain = &funnel_second_chain;
-	else
-		leading_chain = &funnel_first_chain;
-
-	point_list.pop_back();
-	bool perpendicular_foot = false;
-
-	int curr, next;
-	for (int i = 0; i < leading_chain->size()-1; i++)
-	{
-		curr = leading_chain->at(i);
-		next = leading_chain->at(i + 1);
-		foot_perpendicular = foot_of_perpendicular(curr, e);
-		point_list.push_back(foot_perpendicular);
-		if (!side(next, curr, foot_index))
-		{
-			shortest_path.push_back(foot_perpendicular);
-			point_list.pop_back();
-			perpendicular_foot = true;
-			break;
-		}
-		else
-		{
-			shortest_path.push_back(point_list[next]);
-			point_list.pop_back();
-		}
-	}
-
-	if (!perpendicular_foot)
-	{
-		shortest_path.push_back(point_list[leading_chain->back()]);
-	}
-	return;
-}
-*/
 Hourglass find_shortest_path(int p1, int p2) //input : two test points , returns final hourglass(string) representing shortest path of the two points
 {
 	selected_triangle = vector<int>();
@@ -842,17 +670,6 @@ Hourglass find_shortest_path_test_points()
 
 	return final_hourglass;
 }
-/*
-void shortest_path_to_line(Point p, Point e1, Point e2)
-{
-	point_list.push_back(p);
-	point_list.push_back(e1);
-	point_list.push_back(e2);
-	shortest_path_point_to_line(point_list.size() - 3, Edge(point_list.size() - 2, point_list.size() - 1));
-	point_list.pop_back();
-	point_list.pop_back();
-	point_list.pop_back();
-}*/
 
 void add_test_point(int button, int state, int x, int y) {
 	if (state == GLUT_DOWN) {
@@ -968,31 +785,6 @@ void show_sp_line(int key, int x, int y)
 	shortest_path_to_line[0] = Queue[firstIdx][secondIdx]->getShortestPath(0);
 	shortest_path_to_line[1] = Queue[firstIdx][secondIdx]->getShortestPath(1);
 	
-	//printf("%f\n", Queue[firstIdx][secondIdx]->getLength());
-	/*
-
-	if (Events.get_queue().empty())
-		return;
-	int size, subSize;
-	switch (key) {
-	case GLUT_KEY_RIGHT:
-		
-		size = Events.get_queue().size();
-		subSize = Events.get_queue()[firstIdx].size();
-		if (++secondIdx >= subSize)
-		{
-			secondIdx = 0;
-			firstIdx++;
-			if (firstIdx >= size)
-				firstIdx = 0;
-		}
-		shortest_path_to_line = Events.get_queue()[firstIdx][secondIdx]->get_shortest_path_to_line(true);
-		break;
-	case GLUT_KEY_LEFT:
-		shortest_path_to_line = Events.get_queue()[firstIdx][secondIdx]->get_shortest_path_to_line(false);
-		break;
-
-	}*/
 	glutPostRedisplay();
 }
 void print_result(int argc, char **argv) {
@@ -1096,7 +888,7 @@ void display() {
 	glLoadIdentity();
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
-	int rim = 20;
+	int rim = 0;
 	gluOrtho2D(min_x-rim, max_x+rim, min_y- rim, max_y+ rim);
 	glEnable(GL_POINT_SMOOTH);
 	glEnable(GL_POLYGON_SMOOTH);

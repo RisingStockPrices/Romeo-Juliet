@@ -80,9 +80,9 @@ public:
 	{
 		//all bend events have to be tangent to V so the while loop shouldn't run forever
 		Point V = point_list[v];
+		double slice = 1;
 		while (1)
 		{
-			double slice = 1;
 			Point p1(V.get_x() + slice, V.get_y() + slope * slice);
 			if (point_state.find_triangle(p1) == -1)
 				slice /= 2;
