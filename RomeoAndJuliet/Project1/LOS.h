@@ -57,8 +57,6 @@ public:
 				length[idx] += dist(path[idx][i], path[idx][i + 1]);
 		//length doesn't include path to foot in this case....
 		}
-		
-
 	}
 	bool getType1(void) {
 		return type1;
@@ -94,6 +92,13 @@ public:
 				point_list.pop_back();
 				break;
 			}
+		}
+	}
+	void setLength_withFoot()
+	{
+		for (int i = 0; i < 2; i++) {
+			foot[i] = foot_of_max_perpendicular(path[i].back(), endP[0], endP[1]);
+			length[i] += dist(point_list[path[i].back()], foot[i]);
 		}
 	}
 	double getLength_noFoot(int idx)
@@ -180,7 +185,6 @@ public:
 		double d = abs(_slope * u.get_x() - slope * _v.get_x() + _v.get_y()-u.get_y());
 		return d;
 	}
-	
 };
 
 class PATH : public LINE {
